@@ -1,0 +1,107 @@
+﻿<Window x:Class="KizeoAndSharepoint_wizard.Step1"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:KizeoAndSharepoint_wizard"
+        mc:Ignorable="d"
+        Title="Sharepoint Connector Step 1" Height="500" Width="650"  WindowStartupLocation="CenterScreen">
+
+    <DockPanel>
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="Open file" Click="MenuItemImporter_Click"/>
+            <MenuItem Header="Version" Click="MenuItem_Click"/>
+            <!-- <MenuItem Header="About"></MenuItem> -->
+        </Menu>
+
+
+
+        <WrapPanel DockPanel.Dock="Bottom" HorizontalAlignment="Right">
+
+            <Button Name="NextButton" Content="Next"   Style="{StaticResource NormalButtonStyle}" Margin="0,5,5,5" Click="ButtonSuivant_Click"/>
+
+            <Button Content="Exit" Style="{StaticResource NormalButtonStyle}" Margin="40,5,5,5" Click="ButtonAnnuler_Click">
+
+            </Button>
+
+        </WrapPanel>
+
+        <Grid>
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="auto"/>
+            </Grid.RowDefinitions>
+
+            <GroupBox DataContext="{Binding KizeoConfig}" Header="Kizeo Forms settings" Padding="5,15,5,5" Margin="15,15,15,15" IsEnabled="True">
+
+                <Grid >
+                    <Grid.RowDefinitions>
+                        <RowDefinition />
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="121*"/>
+                        <ColumnDefinition Width="61*"/>
+                        <ColumnDefinition Width="15*"/>
+                        <ColumnDefinition Width="48*"/>
+                        <ColumnDefinition Width="345*"/>
+
+                    </Grid.ColumnDefinitions>
+
+                    <Label Content="Url Kizeo Forms" Grid.Column="0" Grid.Row="0" Grid.ColumnSpan="3"/>
+                    <TextBox Name="txtKfUrl" Grid.Row="0" Grid.Column="3"  Style="{StaticResource FormTxtStyle}" Text="{Binding Url}" LostFocus="testUrlKizeoForms" Grid.ColumnSpan="2" />
+                    <Label Content="Token" Grid.Column="0"  Grid.Row="1" Grid.ColumnSpan="3"/>
+                    <TextBox Name="txtToken" Grid.Row="1" Grid.Column="3" Style="{StaticResource FormTxtStyle}" Text="{Binding Token}" Grid.ColumnSpan="2" />
+
+
+
+                </Grid>
+
+
+
+            </GroupBox>
+
+
+
+
+            <GroupBox DataContext="{Binding SharepointConfig}" Header="Sharepoint settings" Grid.Row="1"  Padding="5,15,5,5" Margin="15,15,15,15" Name="SharepointSetting">
+
+                <Grid Margin="0,0,0,24">
+
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto"/>
+                        <RowDefinition Height="auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition />
+                        <ColumnDefinition Width="2*"/>
+
+                    </Grid.ColumnDefinitions>
+                    <Label Content="Url du site SharePoint" Grid.Column="0" Grid.Row="0"/>
+                    <TextBox  Name="sp_domain" Grid.Row="0" Grid.Column="1"  Style="{StaticResource FormTxtStyle}" Text="{Binding SPDomain}" />
+                    <Label Content="Client ID" Grid.Column="0"  Grid.Row="1"/>
+                    <TextBox Name="sp_client_id" Grid.Row="1" Grid.Column="1" Style="{StaticResource FormTxtStyle}" Text="{Binding SPClientId}"/>
+                    <Label Content="Client Secret" Grid.Column="0"  Grid.Row="2"/>
+                    <TextBox  Name="sp_client_secret" Grid.Row="2" Grid.Column="1" Margin="5" Text="{Binding SPClientSecret}" />
+                    <Label Content="Tenant ID" Grid.Column="0" Grid.Row="3" Margin="0,0,0,4"/>
+                    <TextBox x:Name="sp_tenant_id" Grid.Row="3" Grid.Column="1"  Style="{StaticResource FormTxtStyle}" Text="{Binding SPTenantID}" Margin="5,5,5,4" />
+                </Grid>
+            </GroupBox>
+
+            <Button Name="CheckButton" Content="Check connection settings"  Grid.Column="2"  Grid.Row="3" Height="40" Margin="200,10" Padding="5,0" Click="ButtonTestConnection_Click"/>
+
+
+
+        </Grid>
+
+
+
+
+    </DockPanel>
+</Window>

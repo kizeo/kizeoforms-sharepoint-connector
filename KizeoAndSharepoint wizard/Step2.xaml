@@ -1,0 +1,61 @@
+﻿<Window x:Class="KizeoAndSharepoint_wizard.Step2"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:KizeoAndSharepoint_wizard"
+        mc:Ignorable="d"
+        Activated="Window_Activated" 
+
+            Title="Step 2" Height="500" Width="650"  WindowStartupLocation="CenterScreen">
+
+    <DockPanel>
+        
+        <!-- <Menu DockPanel.Dock="Top">
+            <MenuItem Header="Configuration">
+                <MenuItem Header="_Import" Click="MenuItemImporter_Click"/>
+            </MenuItem>
+            <MenuItem Header="About"></MenuItem>
+        </Menu> -->
+
+
+
+        <WrapPanel DockPanel.Dock="Bottom" HorizontalAlignment="Right">
+            <Button Content="Previous" Style="{StaticResource NormalButtonStyle}" Padding="8,5" Click="ButtonPrevious_Click">
+
+            </Button>
+            <Button Content="Next"   Style="{StaticResource NormalButtonStyle}" Margin="0,5,5,5" Click="ButtonSuivant_Click">
+
+            </Button>
+
+            <Button Content="Exit" Style="{StaticResource NormalButtonStyle}"  Click="ButtonAnnuler_Click" Margin="40,5,5,5">
+
+            </Button>
+
+        </WrapPanel>
+
+
+
+        <GroupBox Header="Insert and update Sharepoint lists from Kizeo Forms" Padding="5,15,5,5" Margin="15,15,15,15">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                    <RowDefinition/>
+                </Grid.RowDefinitions>
+
+                <Image Source="Resources/KfDataToSpList.png"/>
+                <ListView Name="lvFormsToSpLists" Margin="5,5" Padding="5,5" Grid.Row="1" ItemsSource="{Binding FormsToSpLists}" SelectedIndex="0">
+                
+                </ListView>
+            <WrapPanel Orientation="Horizontal" HorizontalAlignment="Center" Grid.Row="2">
+                    <Button Content="Add" Style="{StaticResource NormalButtonStyle}" Click="Button_Ajouter_Click"/>
+                    <Button Content="Edit" Style="{StaticResource NormalButtonStyle}" Click="ButtonUpdate_Click"/>
+                    <Button Content="Delete" Style="{StaticResource NormalButtonStyle}" Click="ButtonDelete_Click"/>
+                </WrapPanel>
+            </Grid>
+
+        </GroupBox>
+
+    </DockPanel>
+</Window>
