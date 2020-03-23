@@ -139,7 +139,17 @@ namespace TestClientObjectModel
             }
             catch (System.Net.WebException)
             {
-                TOOLS.LogErrorAndExitProgram("Une ou plusieurs informations de SharePoint sont fausses");
+                try
+                {
+                    var cc = new OfficeDevPnP.Core.AuthenticationManager().GetAppOnlyAuthenticatedContext(ExtractDomainNameFromURL(spDomain), spClientId, spClientSecret);
+                    client_context_buffer = cc;
+
+                }
+                catch (Exception)
+                {
+                    TOOLS.LogErrorwithoutExitProgram("Impossible de communiquer avec SharePoint");
+                    return "undefined";
+                }
             }
             catch (Exception)
             {
@@ -169,7 +179,7 @@ namespace TestClientObjectModel
         }
 
         public static log4net.ILog Log = log4net.LogManager.GetLogger(typeof(SharePointManager));
-
+        private ClientContext client_context_buffer = null;
         /// <summary>
         /// Create instance of Shareoint manager and initialise the context
         /// </summary>
@@ -188,7 +198,10 @@ namespace TestClientObjectModel
                 var token = TrySharePointConnection(spDomain, spClientId, spClientSecret, spTenantId);
                 if (!token.Equals("undefined"))
                 {
-                    Context = GetClientContextWithAccessToken(spDomain, token);
+                    if (client_context_buffer != null)
+                        Context = client_context_buffer;
+                    else
+                        Context = GetClientContextWithAccessToken(spDomain, token);
                     var web = Context.Web;
                     lock (locky)
                     {

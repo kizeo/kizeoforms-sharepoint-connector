@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
+using OfficeDevPnP.Core;
 using System.IO;
 using System.Net;
 using System.Net.Http;
@@ -29,7 +30,7 @@ namespace KizeoAndSharepoint_wizard
     /// </summary>
     public partial class Step1 : Window
     {
-
+        private ClientContext client_context_buffer = null;
 
         public Step1()
         {
@@ -218,7 +219,16 @@ namespace KizeoAndSharepoint_wizard
             }
             catch (System.Net.WebException e)
             {
-                MessageBox.Show("Une ou plusieurs informations de SharePoint sont fausses");
+                try
+                {
+                    var cc = new OfficeDevPnP.Core.AuthenticationManager().GetAppOnlyAuthenticatedContext(ExtractDomainNameFromURL(sp_domain.Text), sp_client_id.Text, sp_client_secret.Text);
+                    client_context_buffer = cc;
+                }
+                catch (Exception)
+                {
+                    MessageBox.Show("Une ou plusieurs informations de SharePoint sont fausses");
+                }
+
             }
             catch (Exception)
             {
@@ -290,7 +300,13 @@ namespace KizeoAndSharepoint_wizard
                 {
                     try
                     {
-                        ClientContext Context = GetClientContextWithAccessToken(sp_domain.Text, token);
+                        ClientContext Context;
+                        if (client_context_buffer != null)
+
+                            Context = client_context_buffer;
+                        else
+                            Context = GetClientContextWithAccessToken(sp_domain.Text, token);
+
                         ((Config)(DataContext)).SharepointConfig.Context = Context;
                         return true;
                     }
