@@ -26,10 +26,7 @@ namespace KizeoAndSharepoint_wizard
             new PeriodicExportsChoices { Id=3,Name="D & W"}
             };
         }
-        private void ButtonAnnuler_Click(object sender, RoutedEventArgs e)
-        {
-            this.Close();
-        }
+
         private void Button_Ajouter_Click(object sender, RoutedEventArgs e)
         {
             var step5AddOrUpdate = new Step5AddorUpdate();
@@ -42,14 +39,17 @@ namespace KizeoAndSharepoint_wizard
             step5AddOrUpdate.Show();
         }
 
+        private void MenuItemSave_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
 
         private void Window_Activated(object sender, EventArgs e)
         {
             RefreshList();
         }
 
-        private void RefreshList()
-        {
+        private void RefreshList() {
             var itemSource = lvPeriodicExports.ItemsSource;
             lvPeriodicExports.ItemsSource = null;
             lvPeriodicExports.ItemsSource = itemSource;
@@ -57,10 +57,6 @@ namespace KizeoAndSharepoint_wizard
 
         private void ButtonSaveACopy_Click(object sender, RoutedEventArgs e)
         {
-            if (((Config)DataContext).PeriodicExports == null)
-            {
-                ((Config)DataContext).PeriodicExports=  new ObservableCollection<PeriodicExport>();
-            }
             var x = (Config)DataContext;
             x.SharepointConfig.Context = null;
 
@@ -70,7 +66,7 @@ namespace KizeoAndSharepoint_wizard
 
             if (fileBrowser.ShowDialog() ?? false)
             {
-
+               
                 using (var sw = new StreamWriter(fileBrowser.FileName, false))
                 {
                     sw.Write(jsonText);
@@ -82,16 +78,11 @@ namespace KizeoAndSharepoint_wizard
 
         private void ButtonTerminer_Click(object sender, RoutedEventArgs e)
         {
-
-            if (((Config)DataContext).PeriodicExports == null)
-            {
-                ((Config)DataContext).PeriodicExports = new ObservableCollection<PeriodicExport>();
-            }
             var x = (Config)DataContext;
             x.SharepointConfig.Context = null;
 
             string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Kizeo");
-            if (!Directory.Exists(path))
+            if(!Directory.Exists(path))
             {
                 Directory.CreateDirectory(path);
             }
@@ -148,6 +139,22 @@ namespace KizeoAndSharepoint_wizard
         }
 
 
+        private void MenuItemImporter_Click(object sender, RoutedEventArgs e)
+        {
+            var fileBrowser = new OpenFileDialog { Filter = "Json File (.json)|*.json| All Files (*.*)|*.*", FilterIndex = 1 };
 
+            if (fileBrowser.ShowDialog() ?? false)
+            {
+
+                using (var sr = new StreamReader(fileBrowser.FileName))
+                {
+
+                    string jsonText = sr.ReadToEnd();
+                    DataContext = JsonConvert.DeserializeObject<Config>(jsonText);
+                }
+
+                MessageBox.Show("File save");
+            }
+        }
     }
 }

@@ -18,6 +18,21 @@ namespace TestClientObjectModel
 
         public static log4net.ILog Log = log4net.LogManager.GetLogger(typeof(TOOLS));
 
+        public static SecureString ConvertToSecureString(string password)
+        {
+            var securePassword = new SecureString();
+
+            if (password == null)
+                throw new ArgumentNullException("password");
+
+            foreach (char c in password)
+                securePassword.AppendChar(c);
+
+            securePassword.MakeReadOnly();
+
+            return securePassword;
+
+        }
 
         /// <summary>
         /// Removes All unothorized characters in a Sharepoint file name : \ " / > % * : ? | ! #
@@ -149,7 +164,24 @@ namespace TestClientObjectModel
         /// </summary>
         /// <param name="ms"></param>
         /// <returns></returns>
-      
+        public static Dictionary<string, MemoryStream> UnZipToMemory(MemoryStream ms)
+        {
+            ms.Seek(0, SeekOrigin.Begin);
+            FileStream fs = System.IO.File.Create("testi.zip");
+            ms.WriteTo(fs);
+            var result = new Dictionary<string, MemoryStream>();
+            using (ZipFile zip = ZipFile.Read(ms))
+            {
+                foreach (ZipEntry e in zip)
+                {
+                    MemoryStream data = new MemoryStream();
+                    e.Extract(data);
+                    result.Add(e.FileName, data);
+                }
+            }
+            fs.Close();
+            return result;
+        }
     }
 
     /// <summary>
@@ -175,7 +207,13 @@ namespace TestClientObjectModel
             }
         }
 
-      
+        public void Remove(T item)
+        {
+            lock (UnParUnSvp)
+            {
+                TheHashSet.Remove(item);
+            }
+        }
 
         public IEnumerator<T> GetEnumerator()
         {

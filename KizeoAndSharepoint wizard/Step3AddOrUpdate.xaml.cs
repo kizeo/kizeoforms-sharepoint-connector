@@ -57,6 +57,8 @@ namespace KizeoAndSharepoint_wizard
             catch (Exception ee)
             {
                 MessageBox.Show("Impossible de charger la liste SharePoint.\nVeuillez vérifier que:\n- Le client utilisé est bien associé l'url SharePoint renseigné\n- L'url est correct\n- L'ID de la liste est correct");
+                /*  MessageBox.Show(ee.ToString());
+                  MessageBox.Show("Wrong Guid Id");*/
             }
 
         }
@@ -74,11 +76,10 @@ namespace KizeoAndSharepoint_wizard
 
         private void ButtonValider_Click(object sender, RoutedEventArgs e)
         {
-            const string list_mask = "00000000-0000-0000-0000-000000000000";
             if (
           !string.IsNullOrEmpty(spLib.Text)
           && (
-              !spLib.Text.Equals(list_mask)
+              !spLib.Text.Equals("00000000-0000-0000-0000-000000000000")
           ) && spLib.Text.Length == 36
       )
             {
@@ -99,11 +100,12 @@ namespace KizeoAndSharepoint_wizard
 
                     this.Hide();
                 }
-                catch (Exception)
+                catch (Exception ee)
                 {
                     spLib.BorderBrush = Brushes.Red;
                     MessageBox.Show("Impossible de charger la librairie SharePoint.\nVeuillez vérifier que:\n- Le client utilisé est bien associé l'url SharePoint renseigné\n- L'url est correct\n- L'ID de la librairie est correct");
-                  
+                    /*  MessageBox.Show(ee.ToString());
+                      MessageBox.Show("Wrong Guid Id");*/
                 }
             }
             else
@@ -155,6 +157,11 @@ namespace KizeoAndSharepoint_wizard
                 lvExports.ItemsSource = ((FormToSpLibrary)DataContext).Exports;
             }
 
+
+        }
+
+        private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
+        {
 
         }
 

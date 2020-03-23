@@ -86,11 +86,10 @@ namespace KizeoAndSharepoint_wizard
 
         public void FillCbBox()
         {
-            const string list_mask = "00000000-0000-0000-0000-000000000000";
             if (
                 !string.IsNullOrEmpty(txtListId.Text) 
                 && (
-                    !txtListId.Text.Equals(list_mask)
+                    !txtListId.Text.Equals("00000000-0000-0000-0000-000000000000")
                 )
             )
             {
@@ -107,10 +106,13 @@ namespace KizeoAndSharepoint_wizard
                     var x = spList.Fields.Where(f => f.Hidden == false).Where(f => f.ReadOnlyField == false).Where(f => f.StaticName == "Title" || f.CanBeDeleted == true).ToList();
                     cbSpColumnId.ItemsSource = x;
                 }
-                catch (Exception)
+                catch (Exception ee)
                 {
                     MessageBox.Show("Impossible de charger la liste SharePoint.\nVeuillez vérifier que:\n- Le client utilisé est bien associé l'url SharePoint renseigné\n- L'url est correct");
-                 
+                   Console.WriteLine(ee.Message);
+                   Console.WriteLine(ee.Source);
+                   Console.WriteLine(ee.StackTrace);
+                   Console.WriteLine("wrong Guid ID (Sharepoint's list)");
                     cbSpColumnId.ItemsSource = null;
                     cbSpColumnId.Items.Clear();
 

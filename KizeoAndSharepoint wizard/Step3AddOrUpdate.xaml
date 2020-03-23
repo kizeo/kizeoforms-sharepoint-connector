@@ -114,7 +114,6 @@
                     <Button Content="Add"   Style="{StaticResource NormalButtonStyle}" Click="ButtonAjouterExport_Click" />
                     <Button Content="Update selected"  Style="{StaticResource NormalButtonStyle}" Click="ButtonUpdateExport_Click" />
                     <Button Content="Delete selected"  Style="{StaticResource NormalButtonStyle}" Click="ButtonDeleteExport_Click" />
-                    <Button Content="Sharepoint metadata settings"  Name="spmetas" Style="{StaticResource NormalButtonStyle}" Height="35" Width="auto" Click="ButtonMetadata_Click"/>
                 </WrapPanel>
 
                 <ListView Name="lvExports" Height="150" Grid.Row="3" Margin="5,5" Padding="5,5" ItemsSource="{Binding Exports}" SelectionChanged="ListView_SelectionChanged" SelectedIndex="0">

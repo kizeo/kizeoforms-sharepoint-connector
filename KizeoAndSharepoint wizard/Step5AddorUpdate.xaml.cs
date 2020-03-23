@@ -24,6 +24,18 @@ namespace KizeoAndSharepoint_wizard
 
         }
 
+        private void ChangeElementsState(bool state)
+        {
+            if (cbExcelList.Text.Equals("Disable")) ;
+            cbExcelList.IsEnabled = state;
+            txtExcelList.IsEnabled = (int)((ComboBox)cbExcelList).SelectedValue == 0 ? false : state;
+            cbExcelListCustom.IsEnabled = state;
+            txtExcelListCustom.IsEnabled = (int)((ComboBox)cbExcelListCustom).SelectedValue == 0 ? false : state;
+            cbCsv.IsEnabled = state;
+            txtCsv.IsEnabled = (int)((ComboBox)cbCsv).SelectedValue == 0 ? false : state;
+            cbCsvCustom.IsEnabled = state;
+            txtCsvCustom.IsEnabled = (int)((ComboBox)cbCsvCustom).SelectedValue == 0 ? false : state;
+        }
         public void InitComboboxes()
         {
 
@@ -35,16 +47,20 @@ namespace KizeoAndSharepoint_wizard
         }
         private void sp_library_id_changed(object sender, TextChangedEventArgs e)
         {
-        
+          /*  if (LibraryExists())
+                ChangeElementsState(true);
+            else
+                ChangeElementsState(false);
+*/
         }
 
         private bool LibraryExists()
         {
-            const string list_mask = "00000000-0000-0000-0000-000000000000";
+            //b69b051e-e649-4841-b39d-610f9d5d2cd0
             if (
              !string.IsNullOrEmpty(lib_sp.Text)
              && (
-                 !lib_sp.Text.Equals(list_mask)
+                 !lib_sp.Text.Equals("00000000-0000-0000-0000-000000000000")
              ) && lib_sp.Text.Length == 36
          )
             {
@@ -108,6 +124,10 @@ namespace KizeoAndSharepoint_wizard
 
         }
 
+        private void TextBox_DataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+
+        }
     }
 
 }

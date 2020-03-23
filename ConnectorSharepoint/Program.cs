@@ -29,7 +29,6 @@ namespace TestClientObjectModel
         {
             System.Globalization.CultureInfo.DefaultThreadCurrentUICulture = System.Globalization.CultureInfo.GetCultureInfo("en-US");
 
-            // Please don't choose too short time
             int kfToSpsyncTime = 5;
             int spToKfSyncTime = 30;
 

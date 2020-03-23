@@ -31,11 +31,6 @@ namespace KizeoAndSharepoint_wizard
             InitializeComponent();
             
         }
-        private void ButtonAnnuler_Click(object sender, RoutedEventArgs e)
-        {
-            this.Close();
-        }
-
 
         private void Window_Activated(object sender, EventArgs e)
         {
@@ -48,14 +43,15 @@ namespace KizeoAndSharepoint_wizard
             lvFormsToSplibraries.ItemsSource = itemSource;
         }
 
- 
+        private void MenuItemSave_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBox.Show("Vous avez appuyé sur Save");
+            MessageBox.Show("Sauvegarde réussite");
+        }
+
         private void ButtonSuivant_Click(object sender, RoutedEventArgs e)
         {
             var step4 = new Step4();
-            if (((Config)DataContext).FormsToSpLibraries == null)
-            {
-                ((Config)DataContext).FormsToSpLibraries = new ObservableCollection<FormToSpLibrary>();
-            }
             step4.DataContext = DataContext;
             step4.Show();
             step4.PreviousWindow = this;
@@ -96,6 +92,23 @@ namespace KizeoAndSharepoint_wizard
 
         }
 
+        private void MenuItemImporter_Click(object sender, RoutedEventArgs e)
+        {
+            var fileBrowser = new OpenFileDialog { Filter = "Json File (.json)|*.json| All Files (*.*)|*.*", FilterIndex = 1 };
+
+            if (fileBrowser.ShowDialog() ?? false)
+            {
+
+                using (var sr = new StreamReader(fileBrowser.FileName))
+                {
+
+                    string jsonText = sr.ReadToEnd();
+                    DataContext = JsonConvert.DeserializeObject<Config>(jsonText);
+                }
+
+                MessageBox.Show("Config file imported");
+            }
+        }
 
         private void ButtonDelete_Click(object sender, RoutedEventArgs e)
         {

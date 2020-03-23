@@ -25,7 +25,7 @@
 
             </Button>
 
-            <Button Content="Exit" Style="{StaticResource NormalButtonStyle}"  Click="ButtonAnnuler_Click" Margin="40,5,5,5">
+            <Button Content="Exit" Style="{StaticResource NormalButtonStyle}" Margin="40,5,5,5">
 
             </Button>
 

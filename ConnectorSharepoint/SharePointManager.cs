@@ -106,17 +106,14 @@ namespace TestClientObjectModel
         }
         private string TrySharePointConnection(string spDomain, string spClientId, string spClientSecret, string spTenantId)
         {
-            string access_url = $"https://accounts.accesscontrol.windows.net/{spTenantId}/tokens/OAuth/2";
-            const string resource_id = "00000003-0000-0ff1-ce00-000000000000";
             try
             {
                 var request = (HttpWebRequest)WebRequest.Create("https://accounts.accesscontrol.windows.net/" + spTenantId + "/tokens/OAuth/2");
 
-               
                 var postData = "grant_type=client_credentials";
-                postData += $"&client_id={ spClientId}@{spTenantId}";
+                postData += "&client_id=" + spClientId + "@" + spTenantId;
                 postData += "&client_secret=" + spClientSecret;
-                postData += $"&resource={resource_id}/{ExtractDomainNameFromURL(spDomain)}@{spTenantId}";
+                postData += "&resource=00000003-0000-0ff1-ce00-000000000000/" + ExtractDomainNameFromURL(spDomain) + "@" + spTenantId;
 
                 byte[] data = Encoding.UTF8.GetBytes(postData);
 
@@ -139,12 +136,23 @@ namespace TestClientObjectModel
             }
             catch (System.Net.WebException)
             {
+
                 TOOLS.LogErrorAndExitProgram("Une ou plusieurs informations de SharePoint sont fausses");
             }
             catch (Exception)
             {
-                TOOLS.LogErrorwithoutExitProgram("Impossible de communiquer avec SharePoint");
-                return "undefined";
+                try
+                {
+                    var cc = new OfficeDevPnP.Core.AuthenticationManager().GetAppOnlyAuthenticatedContext(ExtractDomainNameFromURL(spDomain), spClientId, spClientSecret);
+                    client_context_buffer = cc;
+
+                }
+                catch (Exception)
+                {
+                    TOOLS.LogErrorwithoutExitProgram("Impossible de communiquer avec SharePoint");
+                    return "undefined";
+                }
+
             }
             return "undefined";
         }
@@ -169,6 +177,7 @@ namespace TestClientObjectModel
         }
 
         public static log4net.ILog Log = log4net.LogManager.GetLogger(typeof(SharePointManager));
+        private ClientContext client_context_buffer = null;
 
         /// <summary>
         /// Create instance of Shareoint manager and initialise the context
@@ -188,7 +197,10 @@ namespace TestClientObjectModel
                 var token = TrySharePointConnection(spDomain, spClientId, spClientSecret, spTenantId);
                 if (!token.Equals("undefined"))
                 {
-                    Context = GetClientContextWithAccessToken(spDomain, token);
+                    if (client_context_buffer != null)
+                        Context = client_context_buffer;
+                    else
+                        Context = GetClientContextWithAccessToken(spDomain, token);
                     var web = Context.Web;
                     lock (locky)
                     {
@@ -203,7 +215,7 @@ namespace TestClientObjectModel
                     throw new Exception();
                 }
 
-              
+
             }
             catch (Exception ex)
             {
@@ -241,7 +253,7 @@ namespace TestClientObjectModel
                     if (response.IsSuccessStatusCode)
                     {
                         string filePath = await KfApiManager.TransformText(data.FormID, data.Id, path);
-                        string fileName = GetFileName(response, formToSpLibrary.SpLibrary, Path.Combine(formToSpLibrary.SpWebSiteUrl, filePath),"");
+                        string fileName = GetFileName(response, formToSpLibrary.SpLibrary, Path.Combine(formToSpLibrary.SpWebSiteUrl, filePath), "");
 
                         using (var ms = new MemoryStream())
                         {
@@ -359,7 +371,7 @@ namespace TestClientObjectModel
             }
 
         }
-       
+
 
         /// <summary>
         /// Add and send item to Sharepointlist including Media 
@@ -374,9 +386,12 @@ namespace TestClientObjectModel
         {
             Log.Debug($"Processing data : {data.Id}");
             ListItem item;
-            if (itemUpdated == null) {
+            if (itemUpdated == null)
+            {
                 item = spList.AddItem(new ListItemCreationInformation());
-            } else {
+            }
+            else
+            {
                 item = itemUpdated;
             }
 
@@ -495,7 +510,7 @@ namespace TestClientObjectModel
         /// <param name="folderPath">path in the spLibrary</param>
         /// <param name="fileNamePrefix"> file name prefixe</param>
         /// <returns></returns>
-        public string GetFileName(HttpResponseMessage response, List spLibrary, string folderPath,string fileNamePrefix)
+        public string GetFileName(HttpResponseMessage response, List spLibrary, string folderPath, string fileNamePrefix)
         {
             string fileNameText;
             if (response.Content.Headers.ContentDisposition == null)
@@ -506,15 +521,17 @@ namespace TestClientObjectModel
                     fileNameText = contentDisposition.ToArray()[0];
                     var cp = new ContentDisposition(fileNameText);
                     fileNameText = cp.FileName;
-                } else
+                }
+                else
                 {
                     fileNameText = "";
                 }
-            } else
+            }
+            else
             {
                 fileNameText = response.Content.Headers.ContentDisposition.FileName.ToString();
             }
-            string fileName = fileNamePrefix +TOOLS.CleanString(fileNameText);
+            string fileName = fileNamePrefix + TOOLS.CleanString(fileNameText);
             // var allFiles = GetSpFiles(spLibrary, folderPath);
 
             int i = 2;
@@ -562,7 +579,8 @@ namespace TestClientObjectModel
                 dataSchema = dataSchema.Remove(startIndex, (endIndex - startIndex) + 2);
                 try
                 {
-                    if (item[columnName] != null){
+                    if (item[columnName] != null)
+                    {
                         dataSchema = dataSchema.Insert(startIndex, item[columnName].ToString());
                     }
                 }
@@ -716,7 +734,7 @@ namespace TestClientObjectModel
                 if (response.IsSuccessStatusCode)
                 {
                     string filePath = path;
-                    string fileName = GetFileName(response, periodicexport.SpLibrary, Path.Combine(periodicexport.SpWebSiteUrl, filePath),fileNamePrefix);
+                    string fileName = GetFileName(response, periodicexport.SpLibrary, Path.Combine(periodicexport.SpWebSiteUrl, filePath), fileNamePrefix);
 
                     using (var ms = new MemoryStream())
                     {

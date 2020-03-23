@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Collections.ObjectModel;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -30,10 +29,7 @@ namespace KizeoAndSharepoint_wizard
         }
 
         public Step3 PreviousWindow { get; internal set; }
-        private void ButtonAnnuler_Click(object sender, RoutedEventArgs e)
-        {
-            this.Close();
-        }
+
         private void Window_Activated(object sender, EventArgs e)
         {
             RefreshList();
@@ -48,11 +44,6 @@ namespace KizeoAndSharepoint_wizard
         private void ButtonSuivant_Click(object sender, RoutedEventArgs e)
         {
             var step5 = new Step5();
-
-            if (((Config)DataContext).SpListsToExtLists == null)
-            {
-                ((Config)DataContext).SpListsToExtLists = new ObservableCollection<SpListToExtList>();
-            }
             step5.DataContext = DataContext;
             step5.Show();
             step5.PreviousWindow = this;
@@ -68,6 +59,29 @@ namespace KizeoAndSharepoint_wizard
             step4AddOrUpdate.Context = ((Config)DataContext).SharepointConfig.Context;
             step4AddOrUpdate.Show();
             step4AddOrUpdate.FillCbBox();
+        }
+
+        private void MenuItemImporter_Click(object sender, RoutedEventArgs e)
+        {
+            var fileBrowser = new OpenFileDialog { Filter = "Json File (.json)|*.json| All Files (*.*)|*.*", FilterIndex = 1 };
+
+            if (fileBrowser.ShowDialog() ?? false)
+            {
+
+                using (var sr = new StreamReader(fileBrowser.FileName))
+                {
+
+                    string jsonText = sr.ReadToEnd();
+                    DataContext = JsonConvert.DeserializeObject<Config>(jsonText);
+                }
+
+                MessageBox.Show("Config file imported");
+            }
+        }
+
+        private void MenuItemSave_Click(object sender, RoutedEventArgs e)
+        {
+
         }
 
         private void ButtonPrevious_Click(object sender, RoutedEventArgs e)

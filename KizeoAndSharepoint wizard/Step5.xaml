@@ -30,7 +30,7 @@
 
             </Button>
 
-            <Button Content="Exit" Style="{StaticResource NormalButtonStyle}" Margin="40,5,5,5"  Click="ButtonAnnuler_Click" >
+            <Button Content="Exit" Style="{StaticResource NormalButtonStyle}" Margin="40,5,5,5">
 
             </Button>
 
