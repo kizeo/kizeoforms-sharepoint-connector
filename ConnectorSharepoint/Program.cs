@@ -403,11 +403,12 @@ namespace TestClientObjectModel
 
             if (formToSpLibrary.Exports != null && formToSpLibrary.Exports.Count > 0)
             {
-                var pdfPaths = formToSpLibrary.Exports.Where(e => e.PdfPath != null).Select(e => e.PdfPath).ToList();
+                var pdfPaths = formToSpLibrary.Exports.Where(e => e.ToPdf ).Select(e => e.PdfPath).ToList();
+               
                 foreach (var pdfPath in pdfPaths)
                     allConfigPaths.Add(await KfApiManager.TransformText(data.FormID, data.Id, pdfPath));
 
-                var initialTypepaths = formToSpLibrary.Exports.Where(e => e.initialTypePath != null).Select(e => e.initialTypePath).ToList();
+                var initialTypepaths = formToSpLibrary.Exports.Where(e => e.ToInitialType).Select(e => e.initialTypePath).ToList();
                 foreach (var initialTypePath in initialTypepaths)
                     allConfigPaths.Add(await KfApiManager.TransformText(data.FormID, data.Id, initialTypePath));
             }
