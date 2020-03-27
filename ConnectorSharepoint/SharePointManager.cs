@@ -319,8 +319,8 @@ namespace TestClientObjectModel
                 catch (Exception Ex)
                 {
 
-                    TOOLS.LogErrorwithoutExitProgram(Ex.Message + $"\n" + " filepath : error while uploading file :" + fcInfo.Url + "\n Stack Trace : " + Ex.StackTrace);
-
+                    TOOLS.LogErrorwithoutExitProgram(Ex.Message + $"\n" + " filepath : error while uploading file :" + fcInfo.Url);
+                  /*  TOOLS.LogErrorwithoutExitProgram(Ex.Message + $"\n" + " filepath : error while uploading file :" + fcInfo.Url + "\n Stack Trace : " + Ex.StackTrace);*/
                 }
 
 
