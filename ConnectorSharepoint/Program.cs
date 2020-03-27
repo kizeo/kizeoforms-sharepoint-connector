@@ -294,7 +294,7 @@ namespace TestClientObjectModel
                                 Log.Debug($"---Processing export : {export.Id}");
 
                                 SpManager.RunExport("Initial Type", $"rest/v3/forms/{formId}/data/{data.Id}/exports/{export.Id}", export.ToInitialType, formToSpLibrary, data, export.initialTypePath);
-                                SpManager.RunExport("Pdf Type", $"rest/v3/forms/{formId}/data/{data.Id}/exports/{export.Id}/pdf", export.ToPdf, formToSpLibrary, data, export.initialTypePath);
+                                SpManager.RunExport("Pdf Type", $"rest/v3/forms/{formId}/data/{data.Id}/exports/{export.Id}/pdf", export.ToPdf, formToSpLibrary, data, export.PdfPath);
 
                             }
                         }
