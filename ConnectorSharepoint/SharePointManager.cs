@@ -112,7 +112,7 @@ namespace TestClientObjectModel
             {
                 var request = (HttpWebRequest)WebRequest.Create("https://accounts.accesscontrol.windows.net/" + spTenantId + "/tokens/OAuth/2");
 
-               
+
                 var postData = "grant_type=client_credentials";
                 postData += $"&client_id={ spClientId}@{spTenantId}";
                 postData += "&client_secret=" + spClientSecret;
@@ -216,7 +216,7 @@ namespace TestClientObjectModel
                     throw new Exception();
                 }
 
-              
+
             }
             catch (Exception ex)
             {
@@ -254,7 +254,7 @@ namespace TestClientObjectModel
                     if (response.IsSuccessStatusCode)
                     {
                         string filePath = await KfApiManager.TransformText(data.FormID, data.Id, path);
-                        string fileName = GetFileName(response, formToSpLibrary.SpLibrary, Path.Combine(formToSpLibrary.SpWebSiteUrl, filePath),"");
+                        string fileName = GetFileName(response, formToSpLibrary.SpLibrary, Path.Combine(formToSpLibrary.SpWebSiteUrl, filePath), "");
 
                         using (var ms = new MemoryStream())
                         {
@@ -320,7 +320,7 @@ namespace TestClientObjectModel
                 {
 
                     TOOLS.LogErrorwithoutExitProgram(Ex.Message + $"\n" + " filepath : error while uploading file :" + fcInfo.Url);
-                  /*  TOOLS.LogErrorwithoutExitProgram(Ex.Message + $"\n" + " filepath : error while uploading file :" + fcInfo.Url + "\n Stack Trace : " + Ex.StackTrace);*/
+                    /*  TOOLS.LogErrorwithoutExitProgram(Ex.Message + $"\n" + " filepath : error while uploading file :" + fcInfo.Url + "\n Stack Trace : " + Ex.StackTrace);*/
                 }
 
 
@@ -372,7 +372,34 @@ namespace TestClientObjectModel
             }
 
         }
-       
+        public ListItem MustUpdate(string line, List<ListItem> items, DataMapping mapping, List<DataMapping> unique)
+        {
+            if (unique.Find(_mapping => _mapping.KfColumnSelector.Equals(mapping.KfColumnSelector)) != null)
+            {
+
+                for (var i = 0; i < items.Count; i++)
+                {
+                    foreach (var item in items[i].FieldValues)
+                    {
+
+                        if (item.Key.Equals(mapping.SpColumnId))
+
+                            if (item.Value != null && item.Value.Equals(line))
+                            {
+
+                                return items[i];
+                            }
+
+                    }
+
+
+                }
+
+
+            }
+
+            return null;
+        }
 
         /// <summary>
         /// Add and send item to Sharepointlist including Media 
@@ -383,57 +410,99 @@ namespace TestClientObjectModel
         /// <param name="dataToMark"></param>
         /// <param name="itemUpdated">In case of update, use this item</param>
         /// <returns></returns>
-        public async Task<ListItem> AddItemToList(List spList, List<DataMapping> dataMappings, FormData data, MarkDataReqViewModel dataToMark, ListItem itemUpdated = null)
+        public async Task<ListItem> AddItemToList(List spList, List<DataMapping> dataMappings, FormData data, MarkDataReqViewModel dataToMark, List<DataMapping> uniqueDataMappings)
         {
-            Log.Debug($"Processing data : {data.Id}");
-            ListItem item;
-            if (itemUpdated == null) {
-                item = spList.AddItem(new ListItemCreationInformation());
-            } else {
-                item = itemUpdated;
-            }
 
+            Log.Debug($"Processing data : {data.Id}");
+            List<ListItem> toAdd = new List<ListItem>();
+            var items = GetItems(spList);
+
+
+
+
+            List<List<string>> lines = new List<List<string>>();
+
+            List<string[]> results = new List<string[]>();
             foreach (var dataMapping in dataMappings)
             {
-                string columnValue = await KfApiManager.TransformText(data.FormID, data.Id, dataMapping.KfColumnSelector);
-                TOOLS.ConvertToCorrectTypeAndSet(item, dataMapping, columnValue);
+                results.Add(await KfApiManager.TransformTextAddItem(data.FormID, data.Id, dataMapping.KfColumnSelector));
             }
+            lines.Add(new List<string>());
+
+            for (var i = 0; i < results.First().Length; i++)
+            {
+                foreach (var result in results)
+                {
+                    lines.Last().Add(result[i]);
+                }
+                lines.Add(new List<string>());
+            }
+            lines.Remove(lines.Last());
+
 
             try
             {
-                lock (SharePointManager.locky)
+                foreach (var line in lines)
                 {
-                    item.Update();
-                    Context.ExecuteQuery();
-                    dataToMark.Ids.Add(data.Id);
-                    Log.Debug($"Data {data.Id} sent to Sharepoint successefully");
-                }
-
-
-                var x = $"{KfApiManager.KfApiUrl}/rest/v3/forms/{data.FormID}/data/{data.Id}/all_medias";
-                var response = await KfApiManager.HttpClient.GetAsync(x);
-
-                if (response.StatusCode == System.Net.HttpStatusCode.OK)
-                {
-                    using (var ms = new MemoryStream())
+                    toAdd.Add(spList.AddItem(new ListItemCreationInformation()));
+                    for (var i = 0; i < dataMappings.Count; i++)
                     {
-                        Log.Debug($"processing media for data {data.Id}");
-                        await response.Content.CopyToAsync(ms);
-                        ms.Seek(0, SeekOrigin.Begin);
-                        AttachmentCreationInformation pjInfo = new AttachmentCreationInformation();
-                        pjInfo.ContentStream = ms;
-                        pjInfo.FileName = response.Content.Headers.ContentDisposition.FileName;
-
-                        Attachment pj = item.AttachmentFiles.Add(pjInfo);
-
-                        lock (locky)
+                        var res = MustUpdate(line[i], items, dataMappings[i], uniqueDataMappings);
+                        if (res != null)
                         {
-                            Context.Load(pj);
-                            Context.ExecuteQuery();
+
+                            foreach (var dataMapping in dataMappings)
+                            {
+                                toAdd.Last()[dataMapping.SpColumnId] =res[dataMapping.SpColumnId];
+                            }
 
                         }
+
+                        TOOLS.ConvertToCorrectTypeAndSet(toAdd.Last(), dataMappings[i], line[i]);
                     }
+
+                    var x = $"{KfApiManager.KfApiUrl}/rest/v3/forms/{data.FormID}/data/{data.Id}/all_medias";
+                    var response = await KfApiManager.HttpClient.GetAsync(x);
+
+                    if (response.StatusCode == System.Net.HttpStatusCode.OK)
+                    {
+                        using (var ms = new MemoryStream())
+                        {
+                            Log.Debug($"processing media for data {data.Id}");
+                            await response.Content.CopyToAsync(ms);
+                            ms.Seek(0, SeekOrigin.Begin);
+                            AttachmentCreationInformation pjInfo = new AttachmentCreationInformation();
+                            pjInfo.ContentStream = ms;
+                            pjInfo.FileName = response.Content.Headers.ContentDisposition.FileName;
+
+                            Attachment pj = toAdd.Last().AttachmentFiles.Add(pjInfo);
+
+                            lock (locky)
+                            {
+                                Context.Load(pj);
+                                Context.ExecuteQuery();
+
+                            }
+                        }
+                    }
+                    lock (SharePointManager.locky)
+                    {
+                        toAdd.Last().Update();
+                        Context.ExecuteQuery();
+                        dataToMark.Ids.Add(data.Id);
+                    }
+
                 }
+                foreach(var item in items)
+                {
+                    item.DeleteObject();
+                }
+                Context.ExecuteQuery();
+                Log.Debug($"Data {data.Id} sent to Sharepoint successefully");
+
+
+
+             
 
 
             }
@@ -442,20 +511,25 @@ namespace TestClientObjectModel
                 throw;
             }
 
-            return item;
+            return null;
         }
 
 
         /// <summary>
-        /// Delete delet existing item used in the case of Unique column in sharepoint list
+        /// Get all items of a list
         /// </summary>
         /// <param name="spList">guid of sp List</param>
-        /// <param name="spUniqueColumnName">sharepoint unique column name</param>
-        /// <param name="kfUniqueColumnvalue">unique column value</param>
-        public ListItem RetrieveExistingItem(List spList, string spUniqueColumnName, string kfUniqueColumnvalue)
+        public List<ListItem> GetItems(List spList)
         {
             CamlQuery cmQuery = new CamlQuery();
-            cmQuery.ViewXml = $"<View><Query><Where><Eq><FieldRef Name='{spUniqueColumnName}'/><Value Type='Text'>{kfUniqueColumnvalue}</Value></Eq></Where></Query><RowLimit>10</RowLimit></View>";
+ 
+
+
+            CamlQuery query = CamlQuery.CreateAllItemsQuery(100);
+            ListItemCollection items = spList.GetItems(query);
+            Context.Load(items);
+            Context.ExecuteQuery();
+
 
             lock (locky)
             {
@@ -463,7 +537,7 @@ namespace TestClientObjectModel
                 Context.Load(collListItem);
                 Context.ExecuteQuery();
 
-                return collListItem.First();
+                return collListItem.ToList();
             }
 
         }
@@ -508,7 +582,7 @@ namespace TestClientObjectModel
         /// <param name="folderPath">path in the spLibrary</param>
         /// <param name="fileNamePrefix"> file name prefixe</param>
         /// <returns></returns>
-        public string GetFileName(HttpResponseMessage response, List spLibrary, string folderPath,string fileNamePrefix)
+        public string GetFileName(HttpResponseMessage response, List spLibrary, string folderPath, string fileNamePrefix)
         {
             string fileNameText;
             if (response.Content.Headers.ContentDisposition == null)
@@ -519,39 +593,28 @@ namespace TestClientObjectModel
                     fileNameText = contentDisposition.ToArray()[0];
                     var cp = new ContentDisposition(fileNameText);
                     fileNameText = cp.FileName;
-                } else
+                }
+                else
                 {
                     fileNameText = "";
                 }
-            } else
+            }
+            else
             {
                 fileNameText = response.Content.Headers.ContentDisposition.FileName.ToString();
             }
-            string fileName = fileNamePrefix +TOOLS.CleanString(fileNameText);
-            // var allFiles = GetSpFiles(spLibrary, folderPath);
+            string fileName = fileNamePrefix + TOOLS.CleanString(fileNameText);
+
 
             int i = 2;
             string fileNameWithoutExt = fileName.Substring(0, fileName.IndexOf("."));
             string extention = fileName.Substring(fileName.IndexOf(".") + 1, fileName.Length - fileName.IndexOf(".") - 1);
-            // bool containsFile = true;
+
 
             Guid g;
             g = Guid.NewGuid();
             string guidParsed = g.ToString().Substring(0, 13);
             fileName = fileNameWithoutExt + $".{guidParsed}." + extention;
-
-            // do
-            // {
-            //     if (allFiles.Contains(fileName))
-            //     {
-            //         fileName = fileNameWithoutExt + $"({i})." + extention;
-            //         i++;
-            //         containsFile = true;
-            //     } else {
-            //         containsFile = false;
-            //     }
-
-            // } while (containsFile);
 
             return fileName;
         }
@@ -575,7 +638,8 @@ namespace TestClientObjectModel
                 dataSchema = dataSchema.Remove(startIndex, (endIndex - startIndex) + 2);
                 try
                 {
-                    if (item[columnName] != null){
+                    if (item[columnName] != null)
+                    {
                         dataSchema = dataSchema.Insert(startIndex, item[columnName].ToString());
                     }
                 }
@@ -729,7 +793,7 @@ namespace TestClientObjectModel
                 if (response.IsSuccessStatusCode)
                 {
                     string filePath = path;
-                    string fileName = GetFileName(response, periodicexport.SpLibrary, Path.Combine(periodicexport.SpWebSiteUrl, filePath),fileNamePrefix);
+                    string fileName = GetFileName(response, periodicexport.SpLibrary, Path.Combine(periodicexport.SpWebSiteUrl, filePath), fileNamePrefix);
 
                     using (var ms = new MemoryStream())
                     {

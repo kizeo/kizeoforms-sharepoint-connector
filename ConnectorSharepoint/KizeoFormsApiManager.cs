@@ -91,11 +91,33 @@ namespace TestClientObjectModel
                                     new { textToTransform = columnSelector, data_ids = new string[] { dataId } });
 
                 TransformTextRespViewModel transformedText = await response.Content.ReadAsAsync<TransformTextRespViewModel>();
-                string columnValue = transformedText.TextDatas.Where(td => td.Data_id == dataId).First().Text.First();
+                string columnValues = transformedText.TextDatas.Where(td => td.Data_id == dataId).First().Text.First();
+         
 
-                if (columnValue.Contains("##"))
+                return columnValues;
+            }
+        }
+
+        public async Task<string[]> TransformTextAddItem(string formId, string dataId, string columnSelector)
+        {
+            if (string.IsNullOrEmpty(columnSelector))
+            {
+                TOOLS.LogErrorAndExitProgram("Path = null " + columnSelector + " 3");
+                return null;
+            }
+            else
+            {
+
+                HttpResponseMessage response = await HttpClient.PostAsJsonAsync($"{KfApiUrl}/rest/v3/forms/{formId}/transformText",
+                                    new { textToTransform = columnSelector, data_ids = new string[] { dataId } });
+
+                TransformTextRespViewModel transformedText = await response.Content.ReadAsAsync<TransformTextRespViewModel>();
+               /* string columnValue = transformedText.TextDatas.Where(td => td.Data_id == dataId).First().Text.First();*/
+                string[] columnValue = transformedText.TextDatas.Where(td => td.Data_id == dataId).First().Text;
+
+               /* if (columnValue.Contains("##"))
                     TOOLS.LogErrorAndExitProgram($"No column name found in kizeo forms acording to the expression : {columnValue}");
-
+*/
                 return columnValue;
             }
         }

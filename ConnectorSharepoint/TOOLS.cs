@@ -112,7 +112,7 @@ namespace TestClientObjectModel
                     else
                     {
                         TOOLS.LogErrorwithoutExitProgram($"Error Parsing date value : {columnValue}");
-                        item[dataMapping.SpColumnId] = "";
+                    item[dataMapping.SpColumnId] = "";
                     }
                 }
                 else

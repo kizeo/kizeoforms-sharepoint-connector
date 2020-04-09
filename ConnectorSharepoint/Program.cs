@@ -44,7 +44,7 @@ namespace TestClientObjectModel
                 Config = GetConfig(ConfFile);
                 Log.Debug($"Configuration succeeded");
 
-                if (Config==null || Config.KizeoConfig == null || Config.SharepointConfig == null)
+                if (Config == null || Config.KizeoConfig == null || Config.SharepointConfig == null)
                 {
                     TOOLS.LogErrorAndExitProgram("The config file is empty or some data is missing.");
                 }
@@ -80,9 +80,9 @@ namespace TestClientObjectModel
 
         }
 
-       
 
-        
+
+
 
         /// <summary>
         /// Fill kizeo Forms External list with SharePoint data acording to the Config file
@@ -180,37 +180,15 @@ namespace TestClientObjectModel
                         {
                             try
                             {
-                                await SpManager.AddItemToList(spList, formToSpList.DataMapping, data, dataToMark);
+
+                                var uniqueColumns = formToSpList.DataMapping.Where(dm => dm.SpecialType == "Unique").ToList();
+
+
+                                await SpManager.AddItemToList(spList, formToSpList.DataMapping, data, dataToMark, uniqueColumns);
                             }
                             catch (ServerException ex)
                             {
-                                if (ex.ServerErrorTypeName == "Microsoft.SharePoint.SPDuplicateValuesFoundException")
-                                {
-                                    Log.Warn($"Datum {data.Id} already exists, it will be updated.");
-                                    var uniqueColumn = formToSpList.DataMapping.Where(dm => dm.SpecialType == "Unique").First();
-                                    var kfUniqueColumnvalue = await KfApiManager.TransformText(data.FormID, data.Id, uniqueColumn.KfColumnSelector);
 
-                                    ListItem item = SpManager.RetrieveExistingItem(spList, uniqueColumn.SpColumnId, kfUniqueColumnvalue);
-
-                                    try
-                                    {
-                                        await SpManager.AddItemToList(spList, formToSpList.DataMapping, data, dataToMark, item);
-
-                                    }
-                                    catch (Exception ex2)
-                                    {
-                                        TOOLS.LogErrorwithoutExitProgram($"Error while sending item {data.Id} from form {data.FormID} to the Sharepoint's list {spList.Id}  : " + ex2.Message);
-                                    }
-
-                                }
-                                else
-                                {
-                                    TOOLS.LogErrorwithoutExitProgram($"Error while sending item {data.Id} from form {data.FormID} to the Sharepoint's list {spList.Id}  : " + ex.Message);
-                                }
-
-                            }
-                            catch (Exception ex)
-                            {
                                 TOOLS.LogErrorwithoutExitProgram($"Error while sending item {data.Id} from form {data.FormID} to the Sharepoint's list {spList.Id}  : " + ex.Message);
                             }
                         }
@@ -298,7 +276,7 @@ namespace TestClientObjectModel
 
                             }
                         }
-                        
+
                         dataToMark.Ids.Add(data.Id);
                     }
 
@@ -403,8 +381,8 @@ namespace TestClientObjectModel
 
             if (formToSpLibrary.Exports != null && formToSpLibrary.Exports.Count > 0)
             {
-                var pdfPaths = formToSpLibrary.Exports.Where(e => e.ToPdf ).Select(e => e.PdfPath).ToList();
-               
+                var pdfPaths = formToSpLibrary.Exports.Where(e => e.ToPdf).Select(e => e.PdfPath).ToList();
+
                 foreach (var pdfPath in pdfPaths)
                     allConfigPaths.Add(await KfApiManager.TransformText(data.FormID, data.Id, pdfPath));
 
@@ -474,7 +452,7 @@ namespace TestClientObjectModel
 
         private static void PeriodicExportsEvent(object source, ElapsedEventArgs e)
         {
-            
+
             try
             {
 
@@ -502,7 +480,7 @@ namespace TestClientObjectModel
             string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Kizeo");
             string filePath = Path.Combine(path, ConfFilePath);
 
-            if(!Directory.Exists(path))
+            if (!Directory.Exists(path))
             {
                 Directory.CreateDirectory(path);
             }
