@@ -7,12 +7,14 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using OfficeDevPnP.Core;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using TestClientObjectModel.ViewModels;
+using AuthenticationManager = OfficeDevPnP.Core.AuthenticationManager;
 
 namespace TestClientObjectModel
 {
@@ -95,89 +97,6 @@ namespace TestClientObjectModel
         //Remember only one locky ever 
         public static object lockyFileName;
         public KizeoFormsApiManager KfApiManager;
-
-        private string ExtractDomainNameFromURL(string Url)
-        {
-            return System.Text.RegularExpressions.Regex.Replace(
-                Url,
-                @"^([a-zA-Z]+:\/\/)?([^\/]+)\/.*?$",
-                "$2"
-            );
-        }
-        private string TrySharePointConnection(string spDomain, string spClientId, string spClientSecret, string spTenantId)
-        {
-            string access_url = $"https://accounts.accesscontrol.windows.net/{spTenantId}/tokens/OAuth/2";
-            const string resource_id = "00000003-0000-0ff1-ce00-000000000000";
-            try
-            {
-                var request = (HttpWebRequest)WebRequest.Create("https://accounts.accesscontrol.windows.net/" + spTenantId + "/tokens/OAuth/2");
-
-
-                var postData = "grant_type=client_credentials";
-                postData += $"&client_id={ spClientId}@{spTenantId}";
-                postData += "&client_secret=" + spClientSecret;
-                postData += $"&resource={resource_id}/{ExtractDomainNameFromURL(spDomain)}@{spTenantId}";
-
-                byte[] data = Encoding.UTF8.GetBytes(postData);
-
-                request.Method = "POST";
-                request.ContentType = "application/x-www-form-urlencoded";
-                request.ContentLength = data.Length;
-
-                using (var stream = request.GetRequestStream())
-                {
-                    stream.Write(data, 0, data.Length);
-
-                }
-                var response = (HttpWebResponse)request.GetResponse();
-
-                var responseString = new StreamReader(response.GetResponseStream()).ReadToEnd();
-
-
-                dynamic json = JsonConvert.DeserializeObject(responseString);
-                return json.access_token;
-            }
-            catch (System.Net.WebException)
-            {
-                try
-                {
-                    var cc = new OfficeDevPnP.Core.AuthenticationManager().GetAppOnlyAuthenticatedContext(ExtractDomainNameFromURL(spDomain), spClientId, spClientSecret);
-                    client_context_buffer = cc;
-
-                }
-                catch (Exception)
-                {
-                    TOOLS.LogErrorwithoutExitProgram("Impossible de communiquer avec SharePoint");
-                    return "undefined";
-                }
-            }
-            catch (Exception)
-            {
-                TOOLS.LogErrorwithoutExitProgram("Impossible de communiquer avec SharePoint");
-                return "undefined";
-            }
-            return "undefined";
-        }
-
-        private ClientContext GetClientContextWithAccessToken(string targetUrl, string accessToken)
-        {
-            Uri targetUri = new Uri(targetUrl);
-
-            ClientContext clientContext = new ClientContext(targetUrl);
-
-
-            clientContext.AuthenticationMode = ClientAuthenticationMode.Anonymous;
-            clientContext.FormDigestHandlingEnabled = false;
-            clientContext.ExecutingWebRequest +=
-                delegate (object oSender, WebRequestEventArgs webRequestEventArgs)
-                {
-                    webRequestEventArgs.WebRequestExecutor.RequestHeaders["Authorization"] =
-                        "Bearer " + accessToken;
-                };
-
-            return clientContext;
-        }
-
         public static log4net.ILog Log = log4net.LogManager.GetLogger(typeof(SharePointManager));
         private ClientContext client_context_buffer = null;
         /// <summary>
@@ -187,7 +106,7 @@ namespace TestClientObjectModel
         /// <param name="spUser">UserName</param>
         /// <param name="spPwd">Password</param>
         /// 
-        public SharePointManager(string spDomain, string spClientId, string spClientSecret, string spTenantId, KizeoFormsApiManager kfApiManager_)
+        public SharePointManager(string spDomain, string spClientId, string spClientSecret, KizeoFormsApiManager kfApiManager_)
         {
             KfApiManager = kfApiManager_;
             Log.Debug($"Configuring Sharepoint Context");
@@ -195,34 +114,20 @@ namespace TestClientObjectModel
             lockyFileName = new object();
             try
             {
-                var token = TrySharePointConnection(spDomain, spClientId, spClientSecret, spTenantId);
-                if (!token.Equals("undefined"))
+                Context = new AuthenticationManager().GetAppOnlyAuthenticatedContext(spDomain, spClientId, spClientSecret);
+                var web = Context.Web;
+                lock (locky)
                 {
-                    if (client_context_buffer != null)
-                        Context = client_context_buffer;
-                    else
-                        Context = GetClientContextWithAccessToken(spDomain, token);
-                    var web = Context.Web;
-                    lock (locky)
-                    {
-                        Context.Load(web);
-                        Context.ExecuteQuery();
-                    }
-
-                    Log.Debug($"Configuration succeeded");
-                }
-                else
-                {
-                    throw new Exception();
+                    Context.Load(web);
+                    Context.ExecuteQuery();
                 }
 
-
+                Log.Debug($"Configuration succeeded");
             }
             catch (Exception ex)
             {
                 TOOLS.LogErrorAndExitProgram("Error occured while initializing sharepoint config : " + ex.Message);
             }
-
         }
 
 

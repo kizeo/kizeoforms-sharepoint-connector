@@ -52,7 +52,7 @@ namespace TestClientObjectModel
                 KfApiManager = new KizeoFormsApiManager(Config.KizeoConfig.Url, Config.KizeoConfig.Token);
                 HttpClient = KfApiManager.HttpClient;
 
-                SpManager = new SharePointManager(Config.SharepointConfig.SPDomain, Config.SharepointConfig.SPClientId, Config.SharepointConfig.SPClientSecret, Config.SharepointConfig.SPTenantID, KfApiManager);
+                SpManager = new SharePointManager(Config.SharepointConfig.SPDomain, Config.SharepointConfig.SPClientId, Config.SharepointConfig.SPClientSecret, KfApiManager);
                 Context = SpManager.Context;
 
                 FillKfExtListsFromSp().Wait();

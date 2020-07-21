@@ -22,6 +22,7 @@ using System.Windows;
 using System.Windows.Media;
 using System.Text;
 using System.Web.Script.Serialization;
+using AuthenticationManager = OfficeDevPnP.Core.AuthenticationManager;
 
 namespace KizeoAndSharepoint_wizard
 {
@@ -67,7 +68,7 @@ namespace KizeoAndSharepoint_wizard
         // Test that TextBoxes aren't empty
         private bool TestTextBox()
         {
-            return (!string.IsNullOrEmpty(txtKfUrl.Text) && !string.IsNullOrEmpty(txtToken.Text) && !string.IsNullOrEmpty(sp_client_id.Text) && !string.IsNullOrEmpty(sp_client_secret.Text) && !string.IsNullOrEmpty(sp_tenant_id.Text) && !string.IsNullOrEmpty(sp_domain.Text));
+            return (!string.IsNullOrEmpty(txtKfUrl.Text) && !string.IsNullOrEmpty(txtToken.Text) && !string.IsNullOrEmpty(sp_client_id.Text) && !string.IsNullOrEmpty(sp_client_secret.Text)  && !string.IsNullOrEmpty(sp_domain.Text));
         }
 
         // Initialize textbox frames
@@ -116,10 +117,10 @@ namespace KizeoAndSharepoint_wizard
 
         private async void ButtonSuivant_Click(object sender, RoutedEventArgs e)
         {
-
             if (!TestTextBox()) return;
             if (await TestKfApi() && TestSharePointConnection())
             {
+                ((Config)DataContext).SharepointConfig.Context = new AuthenticationManager().GetAppOnlyAuthenticatedContext(sp_domain.Text, sp_client_id.Text, sp_client_secret.Text);
                 Hide();
                 var step2 = new Step2();
                 step2.DataContext = DataContext;
@@ -174,151 +175,39 @@ namespace KizeoAndSharepoint_wizard
             }
         }
 
-        private string ExtractDomainNameFromURL(string Url)
+        private bool TrySharePointConnection(string url, string clientId, string clientSecret)
         {
-            return System.Text.RegularExpressions.Regex.Replace(
-                Url,
-                @"^([a-zA-Z]+:\/\/)?([^\/]+)\/.*?$",
-                "$2"
-            );
-        }
 
-
-        private string TrySharePointConnection()
-        {
-          
-            string access_url = $"https://accounts.accesscontrol.windows.net/{sp_tenant_id.Text }/tokens/OAuth/2";
-            const string resource_id = "00000003-0000-0ff1-ce00-000000000000";
-            try
+            using (var Context = new AuthenticationManager().GetAppOnlyAuthenticatedContext(url, clientId, clientSecret))
             {
-                var request = (HttpWebRequest)WebRequest.Create(access_url);
-
-                var postData = "grant_type=client_credentials";
-                postData += $"&client_id={ sp_client_id.Text}@{sp_tenant_id.Text}";
-                postData += "&client_secret=" + sp_client_secret.Text;
-                postData += $"&resource={resource_id}/{ExtractDomainNameFromURL(sp_domain.Text)}@{sp_tenant_id.Text}";
-
-                byte[] data = Encoding.UTF8.GetBytes(postData);
-
-                request.Method = "POST";
-                request.ContentType = "application/x-www-form-urlencoded";
-                request.ContentLength = data.Length;
-
-                using (var stream = request.GetRequestStream())
-                {
-                    stream.Write(data, 0, data.Length);
-
-                }
-                var response = (HttpWebResponse)request.GetResponse();
-
-                var responseString = new StreamReader(response.GetResponseStream()).ReadToEnd();
-
-
-                dynamic json = JsonConvert.DeserializeObject(responseString);
-                return json.access_token;
-            }
-            catch (System.Net.WebException e)
-            {
+                var web = Context.Web;
                 try
                 {
-                    var cc = new OfficeDevPnP.Core.AuthenticationManager().GetAppOnlyAuthenticatedContext(ExtractDomainNameFromURL(sp_domain.Text), sp_client_id.Text, sp_client_secret.Text);
-                    client_context_buffer = cc;
+                    Context.Load(web);
+                    Context.ExecuteQuery();
+                    return true;
                 }
                 catch (Exception)
                 {
-                    MessageBox.Show("Une ou plusieurs informations de SharePoint sont fausses");
+                    return false;
                 }
-
-            }
-            catch (Exception)
-            {
-                return "undefined";
-            }
-            return "undefined";
-        }
-
-        private ClientContext GetClientContextWithAccessToken(string targetUrl, string accessToken)
-        {
-            Uri targetUri = new Uri(targetUrl);
-
-            ClientContext clientContext = new ClientContext(targetUrl);
-
-
-            clientContext.AuthenticationMode = ClientAuthenticationMode.Anonymous;
-            clientContext.FormDigestHandlingEnabled = false;
-            clientContext.ExecutingWebRequest +=
-                delegate (object oSender, WebRequestEventArgs webRequestEventArgs)
-                {
-                    webRequestEventArgs.WebRequestExecutor.RequestHeaders["Authorization"] =
-                        "Bearer " + accessToken;
-                };
-
-            return clientContext;
-        }
-        private bool IsTokenCorrect(string token)
-        {
-            try
-            {
-                HttpWebRequest endpointRequest = (HttpWebRequest)HttpWebRequest.Create($"{sp_domain.Text}/_api/web/lists");
-                endpointRequest.Method = "GET";
-                endpointRequest.Accept = "application/json;odata=verbose";
-                endpointRequest.Headers.Add("Authorization",
-                  "Bearer " + token);
-                HttpWebResponse endpointResponse =
-                  (HttpWebResponse)endpointRequest.GetResponse();
-                string json;
-                using (var sr = new StreamReader(endpointResponse.GetResponseStream()))
-                {
-                    json = sr.ReadToEnd();
-                }
-                dynamic data = JsonConvert.DeserializeObject(json);
-
-                return true;
-            }
-            catch (Exception e)
-            {
-                MessageBox.Show(e.ToString());
-
-                return false;
-            }
-
+            };
         }
 
         public bool TestSharePointConnection()
         {
             if (!sp_domain.Text.StartsWith("https://"))
             {
-                MessageBox.Show("L'url du domaine doit commencer par https://");
+                MessageBox.Show("SharePoint's url must start with https://");
                 return false;
-
             }
 
-            var token = TrySharePointConnection();
-            if (!token.Equals("undefined"))
+            var connected = TrySharePointConnection(sp_domain.Text, sp_client_id.Text, sp_client_secret.Text);
+            if (!connected)
             {
-                if (IsTokenCorrect(token))
-                {
-                    try
-                    {
-                        ClientContext Context;
-                        if (client_context_buffer != null)
-
-                            Context = client_context_buffer;
-                        else
-                            Context = GetClientContextWithAccessToken(sp_domain.Text, token);
-
-                        ((Config)(DataContext)).SharepointConfig.Context = Context;
-                        return true;
-                    }
-                    catch (Exception)
-                    {
-                        return false;
-                    }
-
-                }
-
+                MessageBox.Show("Invalid credentials");
             }
-            return false;
+            return connected;
         }
 
 
@@ -345,7 +234,7 @@ namespace KizeoAndSharepoint_wizard
             catch (System.UriFormatException)
             {
                 txtKfUrl.BorderBrush = Brushes.Red;
-                MessageBox.Show("Please enter a valid URL Kizeo Forms.\n(example : https://www.adresse_serveur.ext)");
+                MessageBox.Show("Please enter a valid Kizeo Forms URL .\n(example : https://www.adresse_serveur.ext)");
             }
             finally
             {

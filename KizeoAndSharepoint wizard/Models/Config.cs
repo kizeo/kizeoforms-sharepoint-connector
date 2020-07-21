@@ -47,8 +47,6 @@ namespace KizeoAndSharepoint_wizard.Models
 
         [JsonProperty("domain")]
         public string SPDomain { get { return _SPDomain; } set { _SPDomain = value; this.OnPropertyChanged(); } }
-        [JsonProperty("tenant")]
-        public string SPTenantID { get { return _SPTenantID; } set { _SPTenantID = value; this.OnPropertyChanged(); } }
         [JsonProperty("client")]
         public string SPClientId { get { return _SPClientId; } set { _SPClientId = value; this.OnPropertyChanged(); } }
         [JsonProperty("secret")]
