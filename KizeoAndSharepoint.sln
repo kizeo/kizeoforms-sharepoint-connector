@@ -1,13 +1,15 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27004.2010
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30309.148
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KizeoAndSharepoint wizard", "KizeoAndSharepoint wizard\KizeoAndSharepoint wizard.csproj", "{1E24AA6D-D817-48BE-8978-4D7F4D790678}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharepointConnector", "ConnectorSharepoint\SharepointConnector.csproj", "{50C5452E-68B1-4F43-A099-E9D8254004D9}"
 EndProject
-Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "Setup", "Setup\Setup.vdproj", "{D38733BB-041D-4511-8BA7-56E31549D614}"
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "SetupWizard", "SetupWizard\SetupWizard.vdproj", "{5736B80E-20DE-451E-A391-79E2CD2E0BC7}"
+EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "SetupConnector", "SetupConnector\SetupConnector.vdproj", "{D68DFCBF-316C-4A53-B1D1-CFD9EE55AEE0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -28,12 +30,12 @@ Global
 		{50C5452E-68B1-4F43-A099-E9D8254004D9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{50C5452E-68B1-4F43-A099-E9D8254004D9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{50C5452E-68B1-4F43-A099-E9D8254004D9}.Release|Any CPU.Build.0 = Release|Any CPU
-		{D38733BB-041D-4511-8BA7-56E31549D614}.All|Any CPU.ActiveCfg = Release
-		{D38733BB-041D-4511-8BA7-56E31549D614}.All|Any CPU.Build.0 = Release
-		{D38733BB-041D-4511-8BA7-56E31549D614}.Debug|Any CPU.ActiveCfg = Debug
-		{D38733BB-041D-4511-8BA7-56E31549D614}.Debug|Any CPU.Build.0 = Debug
-		{D38733BB-041D-4511-8BA7-56E31549D614}.Release|Any CPU.ActiveCfg = Release
-		{D38733BB-041D-4511-8BA7-56E31549D614}.Release|Any CPU.Build.0 = Release
+		{5736B80E-20DE-451E-A391-79E2CD2E0BC7}.All|Any CPU.ActiveCfg = Release
+		{5736B80E-20DE-451E-A391-79E2CD2E0BC7}.Debug|Any CPU.ActiveCfg = Debug
+		{5736B80E-20DE-451E-A391-79E2CD2E0BC7}.Release|Any CPU.ActiveCfg = Release
+		{D68DFCBF-316C-4A53-B1D1-CFD9EE55AEE0}.All|Any CPU.ActiveCfg = Release
+		{D68DFCBF-316C-4A53-B1D1-CFD9EE55AEE0}.Debug|Any CPU.ActiveCfg = Debug
+		{D68DFCBF-316C-4A53-B1D1-CFD9EE55AEE0}.Release|Any CPU.ActiveCfg = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
