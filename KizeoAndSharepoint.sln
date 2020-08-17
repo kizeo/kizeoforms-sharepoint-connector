@@ -11,6 +11,8 @@ Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "SetupWizard", "SetupWizard\
 EndProject
 Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "SetupConnector", "SetupConnector\SetupConnector.vdproj", "{D68DFCBF-316C-4A53-B1D1-CFD9EE55AEE0}"
 EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "SetupSharePoint", "SetupSHarePoint\SetupSHarePoint.vdproj", "{893289F6-7C8D-4BD0-9CA8-C7537DC339D0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		All|Any CPU = All|Any CPU
@@ -36,6 +38,9 @@ Global
 		{D68DFCBF-316C-4A53-B1D1-CFD9EE55AEE0}.All|Any CPU.ActiveCfg = Release
 		{D68DFCBF-316C-4A53-B1D1-CFD9EE55AEE0}.Debug|Any CPU.ActiveCfg = Debug
 		{D68DFCBF-316C-4A53-B1D1-CFD9EE55AEE0}.Release|Any CPU.ActiveCfg = Release
+		{893289F6-7C8D-4BD0-9CA8-C7537DC339D0}.All|Any CPU.ActiveCfg = Release
+		{893289F6-7C8D-4BD0-9CA8-C7537DC339D0}.Debug|Any CPU.ActiveCfg = Debug
+		{893289F6-7C8D-4BD0-9CA8-C7537DC339D0}.Release|Any CPU.ActiveCfg = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -67,7 +67,7 @@ namespace KizeoAndSharepoint_wizard.Models
 
     public class KizeoConfig : INotifyPropertyChanged
     {
-        private string _Url;
+        private string _Url= "https://www.kizeoforms.com";
         private string _Token;
 
         [JsonProperty("url")] public string Url { get { return _Url; } set { _Url = value; OnPropertyChanged(); } }
@@ -76,10 +76,7 @@ namespace KizeoAndSharepoint_wizard.Models
         public event PropertyChangedEventHandler PropertyChanged;
         private void OnPropertyChanged([CallerMemberName] string caller = "")
         {
-            if (PropertyChanged != null)
-            {
-                PropertyChanged(this, new PropertyChangedEventArgs(caller));
-            }
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(caller));
         }
 
         [JsonIgnore]
@@ -101,10 +98,7 @@ namespace KizeoAndSharepoint_wizard.Models
         public event PropertyChangedEventHandler PropertyChanged;
         private void OnPropertyChanged([CallerMemberName] string caller = "")
         {
-            if (PropertyChanged != null)
-            {
-                PropertyChanged(this, new PropertyChangedEventArgs(caller));
-            }
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(caller));
         }
 
         public override string ToString()

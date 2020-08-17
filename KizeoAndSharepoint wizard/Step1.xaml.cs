@@ -31,12 +31,9 @@ namespace KizeoAndSharepoint_wizard
     /// </summary>
     public partial class Step1 : Window
     {
-        private ClientContext client_context_buffer = null;
-
         public Step1()
         {
             InitializeComponent();
-
 
             Config config = new Config();
 
@@ -57,18 +54,49 @@ namespace KizeoAndSharepoint_wizard
                 using (var sr = new StreamReader(filePath))
                 {
                     string jsonText = sr.ReadToEnd();
-                    DataContext = JsonConvert.DeserializeObject<Config>(jsonText);
+                    var tmpContext = JsonConvert.DeserializeObject<Config>(jsonText);
+
+                    if (tmpContext == null)
+                    {
+                        sr.Close();
+                        createFile(filePath, true);
+                    }
+                    else
+                    {
+                        DataContext = tmpContext;
+                    }
                 }
             }
+            else
+            {
+                createFile(filePath);
+            }
+        }
 
-
-
+        private void createFile(string filePath, bool exist = false)
+        {
+            string jsonText = JsonConvert.SerializeObject((Config)DataContext, Formatting.Indented);
+            if (exist)
+            {
+                using (var sw = new StreamWriter(filePath, false))
+                {
+                    sw.Write(jsonText);
+                }
+            }
+            else
+            {
+                using (FileStream fs = System.IO.File.Create(filePath))
+                {
+                    byte[] info = new UTF8Encoding(true).GetBytes(jsonText);
+                    fs.Write(info, 0, info.Length);
+                }
+            }
         }
 
         // Test that TextBoxes aren't empty
         private bool TestTextBox()
         {
-            return (!string.IsNullOrEmpty(txtKfUrl.Text) && !string.IsNullOrEmpty(txtToken.Text) && !string.IsNullOrEmpty(sp_client_id.Text) && !string.IsNullOrEmpty(sp_client_secret.Text)  && !string.IsNullOrEmpty(sp_domain.Text));
+            return (!string.IsNullOrEmpty(txtKfUrl.Text) && !string.IsNullOrEmpty(txtToken.Text) && !string.IsNullOrEmpty(sp_client_id.Text) && !string.IsNullOrEmpty(sp_client_secret.Text) && !string.IsNullOrEmpty(sp_domain.Text));
         }
 
         // Initialize textbox frames
@@ -89,18 +117,15 @@ namespace KizeoAndSharepoint_wizard
             }
         }
 
-       
-
         // Test URL Kizeo Forms
         private async void testUrlKizeoForms(object sender, System.EventArgs e)
         {
 
-            var HttpClient = new HttpClient();
-            HttpClient.BaseAddress = new Uri(txtKfUrl.Text);
-            HttpClient.DefaultRequestHeaders.Accept.Clear();
-
             try
             {
+                var HttpClient = new HttpClient();
+                HttpClient.BaseAddress = new Uri(txtKfUrl.Text);
+                HttpClient.DefaultRequestHeaders.Accept.Clear();
                 var testToken = await HttpClient.GetAsync(txtKfUrl.Text);
                 txtKfUrl.Background = Brushes.Transparent;
                 CheckButton.IsEnabled = true;
@@ -117,19 +142,26 @@ namespace KizeoAndSharepoint_wizard
 
         private async void ButtonSuivant_Click(object sender, RoutedEventArgs e)
         {
-            if (!TestTextBox()) return;
-            if (await TestKfApi() && TestSharePointConnection())
+            try
             {
-                ((Config)DataContext).SharepointConfig.Context = new AuthenticationManager().GetAppOnlyAuthenticatedContext(sp_domain.Text, sp_client_id.Text, sp_client_secret.Text);
-                Hide();
-                var step2 = new Step2();
-                step2.DataContext = DataContext;
-                step2.PreviousWindow = this;
-                step2.Show();
+                if (!TestTextBox()) return;
+                if (await TestKfApi() && TestSharePointConnection())
+                {
+                    ((Config)DataContext).SharepointConfig.Context = new AuthenticationManager().GetAppOnlyAuthenticatedContext(sp_domain.Text, sp_client_id.Text, sp_client_secret.Text);
+                    Hide();
+                    var step2 = new Step2();
+                    step2.DataContext = DataContext;
+                    step2.PreviousWindow = this;
+                    step2.Show();
+                }
+                else
+                {
+                    MessageBox.Show("Please check Sharepoint and Kizeo Forms connections before");
+                }
             }
-            else
+            catch (Exception ee)
             {
-                MessageBox.Show("Please check Sharepoint and Kizeo Forms connections before");
+                MessageBox.Show(ee.ToString());
             }
 
         }
@@ -177,21 +209,28 @@ namespace KizeoAndSharepoint_wizard
 
         private bool TrySharePointConnection(string url, string clientId, string clientSecret)
         {
-
-            using (var Context = new AuthenticationManager().GetAppOnlyAuthenticatedContext(url, clientId, clientSecret))
+            try
             {
-                var web = Context.Web;
-                try
+                using (var Context = new AuthenticationManager().GetAppOnlyAuthenticatedContext(url, clientId, clientSecret))
                 {
-                    Context.Load(web);
-                    Context.ExecuteQuery();
-                    return true;
-                }
-                catch (Exception)
-                {
-                    return false;
-                }
-            };
+                    var web = Context.Web;
+                    try
+                    {
+                        Context.Load(web);
+                        Context.ExecuteQuery();
+                        return true;
+                    }
+                    catch (Exception)
+                    {
+                        return false;
+                    }
+                };
+            }
+            catch (Exception e)
+            {
+                return false;
+            }
+
         }
 
         public bool TestSharePointConnection()
@@ -219,22 +258,15 @@ namespace KizeoAndSharepoint_wizard
                 HttpClient.BaseAddress = new Uri(txtKfUrl.Text);
                 HttpClient.DefaultRequestHeaders.Accept.Clear();
                 HttpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                HttpClient.DefaultRequestHeaders.Add("Authorization", txtToken.Text);
-
-                ((Config)(DataContext)).KizeoConfig.HttpClient = HttpClient;
+                HttpClient.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", txtToken.Text);
+                ((Config)DataContext).KizeoConfig.HttpClient = HttpClient; // ca plante
                 var testToken = await HttpClient.GetAsync($"{txtKfUrl.Text}/rest/v3/testapi/sharepoint");
 
                 return testToken.IsSuccessStatusCode;
             }
-            catch (HttpRequestException)
+            catch (Exception e)
             {
-                txtKfUrl.BorderBrush = Brushes.Red;
-                MessageBox.Show("URL Kizeo Forms doesn't exist.");
-            }
-            catch (System.UriFormatException)
-            {
-                txtKfUrl.BorderBrush = Brushes.Red;
-                MessageBox.Show("Please enter a valid Kizeo Forms URL .\n(example : https://www.adresse_serveur.ext)");
+                MessageBox.Show("Couldn't connect to Kizeo Forms. Check both url and token.");
             }
             finally
             {

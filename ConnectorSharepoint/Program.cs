@@ -167,7 +167,6 @@ namespace TestClientObjectModel
                         formData = await response.Content.ReadAsAsync<FormDatasRespViewModel>();
                         if (formData.Data == null)
                             TOOLS.LogErrorAndExitProgram($"Can not find a form with for id {formId}, please check if this is a valid id.");
-
                         Log.Debug($"{formData.Data.Count} data retrieved successfully from form.");
 
                         Log.Debug("Loading Sharepoint's list");
@@ -180,10 +179,7 @@ namespace TestClientObjectModel
                         {
                             try
                             {
-
                                 var uniqueColumns = formToSpList.DataMapping.Where(dm => dm.SpecialType == "Unique").ToList();
-
-
                                 await SpManager.AddItemToList(spList, formToSpList.DataMapping, data, dataToMark, uniqueColumns);
                             }
                             catch (ServerException ex)
@@ -484,12 +480,12 @@ namespace TestClientObjectModel
             {
                 Directory.CreateDirectory(path);
             }
-
+            
             if (!System.IO.File.Exists(filePath))
             {
                 using (FileStream fs = System.IO.File.Create(filePath))
                 {
-
+                  
                 }
             }
 
