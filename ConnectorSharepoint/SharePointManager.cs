@@ -362,7 +362,6 @@ namespace TestClientObjectModel
                             }
 
                         }
-
                         TOOLS.ConvertToCorrectTypeAndSet(toAdd.Last(), dataMappings[i], line[i]);
                     }
 
@@ -386,15 +385,15 @@ namespace TestClientObjectModel
                             {
                                 Context.Load(pj);
                                 Context.ExecuteQuery();
-
                             }
                         }
                     }
-                    lock (SharePointManager.locky)
+                    lock (locky)
                     {
+                        Log.Debug(toAdd[0].FieldValues);
                         toAdd.Last().Update();
                         Context.ExecuteQuery();
-                        dataToMark.Ids.Add(data.Id);
+                        /*dataToMark.Ids.Add(data.Id);*/
                     }
 
                 }
@@ -404,12 +403,6 @@ namespace TestClientObjectModel
                 }
                 Context.ExecuteQuery();
                 Log.Debug($"Data {data.Id} sent to Sharepoint successefully");
-
-
-
-             
-
-
             }
             catch (Exception)
             {

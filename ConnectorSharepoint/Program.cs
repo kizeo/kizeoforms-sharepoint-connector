@@ -184,7 +184,6 @@ namespace TestClientObjectModel
                             }
                             catch (ServerException ex)
                             {
-
                                 TOOLS.LogErrorwithoutExitProgram($"Error while sending item {data.Id} from form {data.FormID} to the Sharepoint's list {spList.Id}  : " + ex.Message);
                             }
                         }
