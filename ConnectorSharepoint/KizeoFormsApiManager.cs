@@ -77,7 +77,7 @@ namespace TestClientObjectModel
         /// <param name="dataId">the DataId</param>
         /// <param name="columnSelector">expresion to replace into it</param>
         /// <returns></returns>
-        public async Task<string> TransformText(string formId, string dataId, string columnSelector)
+        public async Task<string[]> TransformText(string formId, string dataId, string columnSelector)
         {
             if (string.IsNullOrEmpty(columnSelector))
             {
@@ -91,10 +91,7 @@ namespace TestClientObjectModel
                                     new { textToTransform = columnSelector, data_ids = new string[] { dataId } });
 
                 TransformTextRespViewModel transformedText = await response.Content.ReadAsAsync<TransformTextRespViewModel>();
-                string columnValues = transformedText.TextDatas.Where(td => td.Data_id == dataId).First().Text.First();
-         
-
-                return columnValues;
+                return transformedText.TextDatas.Where(td => td.Data_id == dataId).First().Text;
             }
         }
 

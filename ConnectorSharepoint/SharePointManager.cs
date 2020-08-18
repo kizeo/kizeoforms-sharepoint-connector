@@ -158,7 +158,7 @@ namespace TestClientObjectModel
 
                     if (response.IsSuccessStatusCode)
                     {
-                        string filePath = await KfApiManager.TransformText(data.FormID, data.Id, path);
+                        string filePath = (await KfApiManager.TransformText(data.FormID, data.Id, path)).First();
                         string fileName = GetFileName(response, formToSpLibrary.SpLibrary, Path.Combine(formToSpLibrary.SpWebSiteUrl, filePath), "");
 
                         using (var ms = new MemoryStream())
@@ -245,8 +245,8 @@ namespace TestClientObjectModel
             Log.Debug("Processing MetaData");
             foreach (var metaData in metadatas)
             {
-                string columnValue = await KfApiManager.TransformText(data.FormID, data.Id, metaData.KfColumnSelector);
-                TOOLS.ConvertToCorrectTypeAndSet(uploadedFile.ListItemAllFields, metaData, columnValue);
+                string[] columnValues = await KfApiManager.TransformText(data.FormID, data.Id, metaData.KfColumnSelector);
+                TOOLS.ConvertToCorrectTypeAndSet(uploadedFile.ListItemAllFields, metaData, columnValues.First());
             }
         }
 
@@ -281,28 +281,37 @@ namespace TestClientObjectModel
         {
             if (unique.Find(_mapping => _mapping.KfColumnSelector.Equals(mapping.KfColumnSelector)) != null)
             {
-
                 for (var i = 0; i < items.Count; i++)
                 {
                     foreach (var item in items[i].FieldValues)
                     {
-
                         if (item.Key.Equals(mapping.SpColumnId))
 
                             if (item.Value != null && item.Value.Equals(line))
                             {
-
                                 return items[i];
                             }
-
                     }
-
-
                 }
-
-
             }
+            return null;
+        }
 
+        public async Task<ListItem> NeedTobeUpdated(List<DataMapping> dataMappings, FormData data, List spList, List<DataMapping> unique)
+        {
+            foreach (var mapping in dataMappings)
+            {
+                if (unique.Find(_mapping => _mapping.KfColumnSelector.Equals(mapping.KfColumnSelector)) != null)
+                {
+                    string columnValue = (await KfApiManager.TransformText(data.FormID, data.Id, mapping.KfColumnSelector)).First();
+                    var q = new CamlQuery() { ViewXml = "<View><Query><Where><Eq><FieldRef Name='" + mapping.SpColumnId + "' /><Value Type='Text'>" + columnValue + "</Value></Eq></Where></Query></View>" };
+                    var r = spList.GetItems(q);
+                    Context.Load(r);
+                    Context.ExecuteQuery();
+                    if (r.Count >= 1)
+                        return r.Last();
+                }
+            }
             return null;
         }
 
@@ -320,87 +329,123 @@ namespace TestClientObjectModel
 
             Log.Debug($"Processing data : {data.Id}");
             List<ListItem> toAdd = new List<ListItem>();
-            var items = GetItems(spList);
-
-
-
-
             List<List<string>> lines = new List<List<string>>();
-
             List<string[]> results = new List<string[]>();
+
+            ListItem item = spList.AddItem(new ListItemCreationInformation());
+            var r = await NeedTobeUpdated(dataMappings, data, spList, uniqueDataMappings);
+            if (r != null)
+            {
+                item = r;
+            }
             foreach (var dataMapping in dataMappings)
             {
-                results.Add(await KfApiManager.TransformTextAddItem(data.FormID, data.Id, dataMapping.KfColumnSelector));
-            }
-            lines.Add(new List<string>());
+                string[] columnValues = await KfApiManager.TransformText(data.FormID, data.Id, dataMapping.KfColumnSelector);
 
-            for (var i = 0; i < results.First().Length; i++)
-            {
-                foreach (var result in results)
+                TOOLS.ConvertToCorrectTypeAndSet(item, dataMapping, columnValues.First());
+                if (columnValues.Length > 1)
                 {
-                    lines.Last().Add(result[i]);
+                    foreach (string columnValue in columnValues)
+                    {
+                        if (columnValue != columnValues.First())
+                        {
+                            if (toAdd.Count == 0)
+                            {
+                                var tmp_item = spList.AddItem(new ListItemCreationInformation());
+                                foreach (var field in dataMappings)
+                                {
+                                    tmp_item[field.SpColumnId] = item[field.SpColumnId];
+                                }
+                                TOOLS.ConvertToCorrectTypeAndSet(tmp_item, dataMapping, columnValue);
+                                toAdd.Add(tmp_item);
+                            }
+                            else
+                            {
+                                foreach(var add in toAdd)
+                                {
+                                    TOOLS.ConvertToCorrectTypeAndSet(add, dataMapping, columnValue);
+                                }
+                            }
+                        }
+                    }
                 }
-                lines.Add(new List<string>());
             }
-            lines.Remove(lines.Last());
+            /*  var items = GetItems(spList);
+              toAdd.Add(spList.AddItem(new ListItemCreationInformation()));
 
+              foreach (var dataMapping in dataMappings)
+              {
+                  results.Add(await KfApiManager.TransformTextAddItem(data.FormID, data.Id, dataMapping.KfColumnSelector));
+              }
+              lines.Add(new List<string>());
 
+              for (var i = 0; i < results.First().Length; i++)
+              {
+                  foreach (var result in results)
+                  {
+                      lines.Last().Add(result[i]);
+                  }
+                  lines.Add(new List<string>());
+              }
+              lines.Remove(lines.Last());
+
+              foreach (var line in lines)
+              {
+                  for (var i = 0; i < dataMappings.Count; i++)
+                  {
+                      var res = MustUpdate(line[i], items, dataMappings[i], uniqueDataMappings);
+                      if (res != null)
+                      {
+
+                          foreach (var dataMapping in dataMappings)
+                          {
+                              toAdd.Last()[dataMapping.SpColumnId] = res[dataMapping.SpColumnId];
+                          }
+                      }
+                      TOOLS.ConvertToCorrectTypeAndSet(toAdd.Last(), dataMappings[i], line[i]);
+                  }
+              }*/
             try
             {
-                foreach (var line in lines)
+                lock (locky)
                 {
-                    toAdd.Add(spList.AddItem(new ListItemCreationInformation()));
-                    for (var i = 0; i < dataMappings.Count; i++)
+                    item.Update();
+                    foreach (var add in toAdd)
                     {
-                        var res = MustUpdate(line[i], items, dataMappings[i], uniqueDataMappings);
-                        if (res != null)
-                        {
-
-                            foreach (var dataMapping in dataMappings)
-                            {
-                                toAdd.Last()[dataMapping.SpColumnId] =res[dataMapping.SpColumnId];
-                            }
-
-                        }
-                        TOOLS.ConvertToCorrectTypeAndSet(toAdd.Last(), dataMappings[i], line[i]);
+                        add.Update();
                     }
+                    Context.ExecuteQuery();
+                    /*dataToMark.Ids.Add(data.Id);*/
+                }
 
-                    var x = $"{KfApiManager.KfApiUrl}/rest/v3/forms/{data.FormID}/data/{data.Id}/all_medias";
-                    var response = await KfApiManager.HttpClient.GetAsync(x);
+                var x = $"{KfApiManager.KfApiUrl}/rest/v3/forms/{data.FormID}/data/{data.Id}/all_medias";
+                var response = await KfApiManager.HttpClient.GetAsync(x);
 
-                    if (response.StatusCode == System.Net.HttpStatusCode.OK)
+                if (response.StatusCode == System.Net.HttpStatusCode.OK)
+                {
+                    using (var ms = new MemoryStream())
                     {
-                        using (var ms = new MemoryStream())
+                        Log.Debug($"processing media for data {data.Id}");
+                        await response.Content.CopyToAsync(ms);
+                        ms.Seek(0, SeekOrigin.Begin);
+                        AttachmentCreationInformation pjInfo = new AttachmentCreationInformation();
+                        pjInfo.ContentStream = ms;
+                        pjInfo.FileName = response.Content.Headers.ContentDisposition.FileName;
+
+                        Attachment pj = toAdd.Last().AttachmentFiles.Add(pjInfo);
+
+                        lock (locky)
                         {
-                            Log.Debug($"processing media for data {data.Id}");
-                            await response.Content.CopyToAsync(ms);
-                            ms.Seek(0, SeekOrigin.Begin);
-                            AttachmentCreationInformation pjInfo = new AttachmentCreationInformation();
-                            pjInfo.ContentStream = ms;
-                            pjInfo.FileName = response.Content.Headers.ContentDisposition.FileName;
-
-                            Attachment pj = toAdd.Last().AttachmentFiles.Add(pjInfo);
-
-                            lock (locky)
-                            {
-                                Context.Load(pj);
-                                Context.ExecuteQuery();
-                            }
+                            Context.Load(pj);
+                            Context.ExecuteQuery();
                         }
                     }
-                    lock (locky)
-                    {
-                        Log.Debug(toAdd[0].FieldValues);
-                        toAdd.Last().Update();
-                        Context.ExecuteQuery();
-                        /*dataToMark.Ids.Add(data.Id);*/
-                    }
+                }
 
-                }
-                foreach(var item in items)
-                {
-                    item.DeleteObject();
-                }
+                /*   foreach (var item in items)
+                   {
+                       item.DeleteObject();
+                   }*/
                 Context.ExecuteQuery();
                 Log.Debug($"Data {data.Id} sent to Sharepoint successefully");
             }
@@ -420,7 +465,7 @@ namespace TestClientObjectModel
         public List<ListItem> GetItems(List spList)
         {
             CamlQuery cmQuery = new CamlQuery();
- 
+
 
 
             CamlQuery query = CamlQuery.CreateAllItemsQuery(100);

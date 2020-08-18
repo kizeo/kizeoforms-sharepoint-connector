@@ -368,22 +368,22 @@ namespace TestClientObjectModel
         {
             LockedHashset<string> allConfigPaths = new LockedHashset<string>();
 
-            if (formToSpLibrary.ToStandardPdf) allConfigPaths.Add(await KfApiManager.TransformText(data.FormID, data.Id, formToSpLibrary.StandardPdfPath));
-            if (formToSpLibrary.ToExcelList) allConfigPaths.Add(await KfApiManager.TransformText(data.FormID, data.Id, formToSpLibrary.ExcelListPath));
-            if (formToSpLibrary.ToCsv) allConfigPaths.Add(await KfApiManager.TransformText(data.FormID, data.Id, formToSpLibrary.CsvPath));
-            if (formToSpLibrary.ToCsvCustom) allConfigPaths.Add(await KfApiManager.TransformText(data.FormID, data.Id, formToSpLibrary.CsvCustomPath));
-            if (formToSpLibrary.ToExcelListCustom) allConfigPaths.Add(await KfApiManager.TransformText(data.FormID, data.Id, formToSpLibrary.ExcelListCustomPath));
+            if (formToSpLibrary.ToStandardPdf) allConfigPaths.Add((await KfApiManager.TransformText(data.FormID, data.Id, formToSpLibrary.StandardPdfPath)).First());
+            if (formToSpLibrary.ToExcelList) allConfigPaths.Add((await KfApiManager.TransformText(data.FormID, data.Id, formToSpLibrary.ExcelListPath)).First());
+            if (formToSpLibrary.ToCsv) allConfigPaths.Add((await KfApiManager.TransformText(data.FormID, data.Id, formToSpLibrary.CsvPath)).First());
+            if (formToSpLibrary.ToCsvCustom) allConfigPaths.Add((await KfApiManager.TransformText(data.FormID, data.Id, formToSpLibrary.CsvCustomPath)).First());
+            if (formToSpLibrary.ToExcelListCustom) allConfigPaths.Add((await KfApiManager.TransformText(data.FormID, data.Id, formToSpLibrary.ExcelListCustomPath)).First());
 
             if (formToSpLibrary.Exports != null && formToSpLibrary.Exports.Count > 0)
             {
                 var pdfPaths = formToSpLibrary.Exports.Where(e => e.ToPdf).Select(e => e.PdfPath).ToList();
 
                 foreach (var pdfPath in pdfPaths)
-                    allConfigPaths.Add(await KfApiManager.TransformText(data.FormID, data.Id, pdfPath));
+                    allConfigPaths.Add((await KfApiManager.TransformText(data.FormID, data.Id, pdfPath)).First());
 
                 var initialTypepaths = formToSpLibrary.Exports.Where(e => e.ToInitialType).Select(e => e.initialTypePath).ToList();
                 foreach (var initialTypePath in initialTypepaths)
-                    allConfigPaths.Add(await KfApiManager.TransformText(data.FormID, data.Id, initialTypePath));
+                    allConfigPaths.Add((await KfApiManager.TransformText(data.FormID, data.Id, initialTypePath)).First());
             }
 
             return allConfigPaths;
