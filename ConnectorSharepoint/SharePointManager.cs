@@ -296,8 +296,7 @@ namespace TestClientObjectModel
             }
             return null;
         }
-
-        public async Task<ListItem> NeedTobeUpdated(List<DataMapping> dataMappings, FormData data, List spList, List<DataMapping> unique)
+        private async Task<ListItem> NeedTobeUpdated(List<DataMapping> dataMappings, FormData data, List spList, List<DataMapping> unique)
         {
             foreach (var mapping in dataMappings)
             {
@@ -308,13 +307,55 @@ namespace TestClientObjectModel
                     var r = spList.GetItems(q);
                     Context.Load(r);
                     Context.ExecuteQuery();
-                    if (r.Count >= 1)
+                    if (r.Count > 0)
                         return r.Last();
                 }
             }
             return null;
         }
 
+        private void RemoveDuplicated(ref List<ListItem> toAdd, List<DataMapping> dataMappings, List spList, List<DataMapping> unique, ListItemCollection allItems)
+        {
+
+            List<int> toRemove = new List<int>();
+            List<ListItem> complement = new List<ListItem>();
+            int count = 0;
+            List<ListItem> queries = new List<ListItem>();
+            foreach (ListItem item in toAdd)
+            {
+                foreach (ListItem spItem in allItems)
+                {
+                    if (spItem[unique.First().SpColumnId].Equals(item[unique.First().SpColumnId]))
+                    {
+                        foreach (var key in dataMappings)
+                        {
+                            spItem[key.SpColumnId] = item[key.SpColumnId];
+                        }
+                        spItem.Update();
+                        complement.Add(spItem);
+                        toRemove.Add(count);
+                        break;
+                    }
+                }
+                count++;
+            }
+            int buff = 0;
+            foreach (int index in toRemove)
+            {
+                toAdd.RemoveAt(index - buff++);
+            }
+            toAdd.AddRange(complement);
+        }
+
+
+        private ListItemCollection getAllListItems(List spList)
+        {
+            var q = new CamlQuery() { ViewXml = "<View><Query /></View>" };
+            var r = spList.GetItems(q);
+            Context.Load(r);
+            Context.ExecuteQuery();
+            return r;
+        }
         /// <summary>
         /// Add and send item to Sharepointlist including Media 
         /// </summary>
@@ -326,13 +367,16 @@ namespace TestClientObjectModel
         /// <returns></returns>
         public async Task<ListItem> AddItemToList(List spList, List<DataMapping> dataMappings, FormData data, MarkDataReqViewModel dataToMark, List<DataMapping> uniqueDataMappings)
         {
-
+            bool containsArray = false;
             Log.Debug($"Processing data : {data.Id}");
             List<ListItem> toAdd = new List<ListItem>();
             List<List<string>> lines = new List<List<string>>();
             List<string[]> results = new List<string[]>();
+            ListItemCollection allItems = getAllListItems(spList);
+            int toCreate = -1;
 
             ListItem item = spList.AddItem(new ListItemCreationInformation());
+
             var r = await NeedTobeUpdated(dataMappings, data, spList, uniqueDataMappings);
             if (r != null)
             {
@@ -345,77 +389,50 @@ namespace TestClientObjectModel
                 TOOLS.ConvertToCorrectTypeAndSet(item, dataMapping, columnValues.First());
                 if (columnValues.Length > 1)
                 {
+                    if (toCreate.Equals(-1))
+                        toCreate = columnValues.Length - 1;
+
+                    containsArray = true;
+                    int cvc = 0;
                     foreach (string columnValue in columnValues)
                     {
                         if (columnValue != columnValues.First())
                         {
-                            if (toAdd.Count == 0)
+                            if (toCreate > 0)
                             {
                                 var tmp_item = spList.AddItem(new ListItemCreationInformation());
                                 foreach (var field in dataMappings)
                                 {
-                                    tmp_item[field.SpColumnId] = item[field.SpColumnId];
+                                    if (item.FieldValues.ContainsKey(field.SpColumnId))
+                                    {
+                                        tmp_item[field.SpColumnId] = item[field.SpColumnId];
+                                    }
                                 }
                                 TOOLS.ConvertToCorrectTypeAndSet(tmp_item, dataMapping, columnValue);
                                 toAdd.Add(tmp_item);
+                                toCreate--;
                             }
                             else
                             {
-                                foreach(var add in toAdd)
-                                {
-                                    TOOLS.ConvertToCorrectTypeAndSet(add, dataMapping, columnValue);
-                                }
+                                TOOLS.ConvertToCorrectTypeAndSet(toAdd[cvc++], dataMapping, columnValue);
                             }
                         }
                     }
                 }
             }
-            /*  var items = GetItems(spList);
-              toAdd.Add(spList.AddItem(new ListItemCreationInformation()));
-
-              foreach (var dataMapping in dataMappings)
-              {
-                  results.Add(await KfApiManager.TransformTextAddItem(data.FormID, data.Id, dataMapping.KfColumnSelector));
-              }
-              lines.Add(new List<string>());
-
-              for (var i = 0; i < results.First().Length; i++)
-              {
-                  foreach (var result in results)
-                  {
-                      lines.Last().Add(result[i]);
-                  }
-                  lines.Add(new List<string>());
-              }
-              lines.Remove(lines.Last());
-
-              foreach (var line in lines)
-              {
-                  for (var i = 0; i < dataMappings.Count; i++)
-                  {
-                      var res = MustUpdate(line[i], items, dataMappings[i], uniqueDataMappings);
-                      if (res != null)
-                      {
-
-                          foreach (var dataMapping in dataMappings)
-                          {
-                              toAdd.Last()[dataMapping.SpColumnId] = res[dataMapping.SpColumnId];
-                          }
-                      }
-                      TOOLS.ConvertToCorrectTypeAndSet(toAdd.Last(), dataMappings[i], line[i]);
-                  }
-              }*/
+            toAdd.Insert(0, item);
+            if (containsArray)
+                RemoveDuplicated(ref toAdd, dataMappings, spList, uniqueDataMappings, allItems);
             try
             {
                 lock (locky)
                 {
-                    item.Update();
                     foreach (var add in toAdd)
                     {
                         add.Update();
                     }
                     Context.ExecuteQuery();
-                    /*dataToMark.Ids.Add(data.Id);*/
+                    dataToMark.Ids.Add(data.Id);
                 }
 
                 var x = $"{KfApiManager.KfApiUrl}/rest/v3/forms/{data.FormID}/data/{data.Id}/all_medias";
