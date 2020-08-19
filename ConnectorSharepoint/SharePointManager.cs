@@ -7,12 +7,14 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using OfficeDevPnP.Core;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using TestClientObjectModel.ViewModels;
+using AuthenticationManager = OfficeDevPnP.Core.AuthenticationManager;
 
 namespace TestClientObjectModel
 {
@@ -95,89 +97,6 @@ namespace TestClientObjectModel
         //Remember only one locky ever 
         public static object lockyFileName;
         public KizeoFormsApiManager KfApiManager;
-
-        private string ExtractDomainNameFromURL(string Url)
-        {
-            return System.Text.RegularExpressions.Regex.Replace(
-                Url,
-                @"^([a-zA-Z]+:\/\/)?([^\/]+)\/.*?$",
-                "$2"
-            );
-        }
-        private string TrySharePointConnection(string spDomain, string spClientId, string spClientSecret, string spTenantId)
-        {
-            string access_url = $"https://accounts.accesscontrol.windows.net/{spTenantId}/tokens/OAuth/2";
-            const string resource_id = "00000003-0000-0ff1-ce00-000000000000";
-            try
-            {
-                var request = (HttpWebRequest)WebRequest.Create("https://accounts.accesscontrol.windows.net/" + spTenantId + "/tokens/OAuth/2");
-
-               
-                var postData = "grant_type=client_credentials";
-                postData += $"&client_id={ spClientId}@{spTenantId}";
-                postData += "&client_secret=" + spClientSecret;
-                postData += $"&resource={resource_id}/{ExtractDomainNameFromURL(spDomain)}@{spTenantId}";
-
-                byte[] data = Encoding.UTF8.GetBytes(postData);
-
-                request.Method = "POST";
-                request.ContentType = "application/x-www-form-urlencoded";
-                request.ContentLength = data.Length;
-
-                using (var stream = request.GetRequestStream())
-                {
-                    stream.Write(data, 0, data.Length);
-
-                }
-                var response = (HttpWebResponse)request.GetResponse();
-
-                var responseString = new StreamReader(response.GetResponseStream()).ReadToEnd();
-
-
-                dynamic json = JsonConvert.DeserializeObject(responseString);
-                return json.access_token;
-            }
-            catch (System.Net.WebException)
-            {
-                try
-                {
-                    var cc = new OfficeDevPnP.Core.AuthenticationManager().GetAppOnlyAuthenticatedContext(ExtractDomainNameFromURL(spDomain), spClientId, spClientSecret);
-                    client_context_buffer = cc;
-
-                }
-                catch (Exception)
-                {
-                    TOOLS.LogErrorwithoutExitProgram("Impossible de communiquer avec SharePoint");
-                    return "undefined";
-                }
-            }
-            catch (Exception)
-            {
-                TOOLS.LogErrorwithoutExitProgram("Impossible de communiquer avec SharePoint");
-                return "undefined";
-            }
-            return "undefined";
-        }
-
-        private ClientContext GetClientContextWithAccessToken(string targetUrl, string accessToken)
-        {
-            Uri targetUri = new Uri(targetUrl);
-
-            ClientContext clientContext = new ClientContext(targetUrl);
-
-
-            clientContext.AuthenticationMode = ClientAuthenticationMode.Anonymous;
-            clientContext.FormDigestHandlingEnabled = false;
-            clientContext.ExecutingWebRequest +=
-                delegate (object oSender, WebRequestEventArgs webRequestEventArgs)
-                {
-                    webRequestEventArgs.WebRequestExecutor.RequestHeaders["Authorization"] =
-                        "Bearer " + accessToken;
-                };
-
-            return clientContext;
-        }
-
         public static log4net.ILog Log = log4net.LogManager.GetLogger(typeof(SharePointManager));
         private ClientContext client_context_buffer = null;
         /// <summary>
@@ -187,7 +106,7 @@ namespace TestClientObjectModel
         /// <param name="spUser">UserName</param>
         /// <param name="spPwd">Password</param>
         /// 
-        public SharePointManager(string spDomain, string spClientId, string spClientSecret, string spTenantId, KizeoFormsApiManager kfApiManager_)
+        public SharePointManager(string spDomain, string spClientId, string spClientSecret, KizeoFormsApiManager kfApiManager_)
         {
             KfApiManager = kfApiManager_;
             Log.Debug($"Configuring Sharepoint Context");
@@ -195,34 +114,20 @@ namespace TestClientObjectModel
             lockyFileName = new object();
             try
             {
-                var token = TrySharePointConnection(spDomain, spClientId, spClientSecret, spTenantId);
-                if (!token.Equals("undefined"))
+                Context = new AuthenticationManager().GetAppOnlyAuthenticatedContext(spDomain, spClientId, spClientSecret);
+                var web = Context.Web;
+                lock (locky)
                 {
-                    if (client_context_buffer != null)
-                        Context = client_context_buffer;
-                    else
-                        Context = GetClientContextWithAccessToken(spDomain, token);
-                    var web = Context.Web;
-                    lock (locky)
-                    {
-                        Context.Load(web);
-                        Context.ExecuteQuery();
-                    }
-
-                    Log.Debug($"Configuration succeeded");
-                }
-                else
-                {
-                    throw new Exception();
+                    Context.Load(web);
+                    Context.ExecuteQuery();
                 }
 
-              
+                Log.Debug($"Configuration succeeded");
             }
             catch (Exception ex)
             {
                 TOOLS.LogErrorAndExitProgram("Error occured while initializing sharepoint config : " + ex.Message);
             }
-
         }
 
 
@@ -253,8 +158,8 @@ namespace TestClientObjectModel
 
                     if (response.IsSuccessStatusCode)
                     {
-                        string filePath = await KfApiManager.TransformText(data.FormID, data.Id, path);
-                        string fileName = GetFileName(response, formToSpLibrary.SpLibrary, Path.Combine(formToSpLibrary.SpWebSiteUrl, filePath),"");
+                        string filePath = (await KfApiManager.TransformText(data.FormID, data.Id, path)).First();
+                        string fileName = GetFileName(response, formToSpLibrary.SpLibrary, Path.Combine(formToSpLibrary.SpWebSiteUrl, filePath), "");
 
                         using (var ms = new MemoryStream())
                         {
@@ -319,8 +224,8 @@ namespace TestClientObjectModel
                 catch (Exception Ex)
                 {
 
-                    TOOLS.LogErrorwithoutExitProgram(Ex.Message + $"\n" + " filepath : error while uploading file :" + fcInfo.Url + "\n Stack Trace : " + Ex.StackTrace);
-
+                    TOOLS.LogErrorwithoutExitProgram(Ex.Message + $"\n" + " filepath : error while uploading file :" + fcInfo.Url);
+                    /*  TOOLS.LogErrorwithoutExitProgram(Ex.Message + $"\n" + " filepath : error while uploading file :" + fcInfo.Url + "\n Stack Trace : " + Ex.StackTrace);*/
                 }
 
 
@@ -340,8 +245,8 @@ namespace TestClientObjectModel
             Log.Debug("Processing MetaData");
             foreach (var metaData in metadatas)
             {
-                string columnValue = await KfApiManager.TransformText(data.FormID, data.Id, metaData.KfColumnSelector);
-                TOOLS.ConvertToCorrectTypeAndSet(uploadedFile.ListItemAllFields, metaData, columnValue);
+                string[] columnValues = await KfApiManager.TransformText(data.FormID, data.Id, metaData.KfColumnSelector);
+                TOOLS.ConvertToCorrectTypeAndSet(uploadedFile.ListItemAllFields, metaData, columnValues.First());
             }
         }
 
@@ -372,8 +277,85 @@ namespace TestClientObjectModel
             }
 
         }
-       
+        public ListItem MustUpdate(string line, List<ListItem> items, DataMapping mapping, List<DataMapping> unique)
+        {
+            if (unique.Find(_mapping => _mapping.KfColumnSelector.Equals(mapping.KfColumnSelector)) != null)
+            {
+                for (var i = 0; i < items.Count; i++)
+                {
+                    foreach (var item in items[i].FieldValues)
+                    {
+                        if (item.Key.Equals(mapping.SpColumnId))
 
+                            if (item.Value != null && item.Value.Equals(line))
+                            {
+                                return items[i];
+                            }
+                    }
+                }
+            }
+            return null;
+        }
+        private async Task<ListItem> NeedTobeUpdated(List<DataMapping> dataMappings, FormData data, List spList, List<DataMapping> unique)
+        {
+            foreach (var mapping in dataMappings)
+            {
+                if (unique.Find(_mapping => _mapping.KfColumnSelector.Equals(mapping.KfColumnSelector)) != null)
+                {
+                    string columnValue = (await KfApiManager.TransformText(data.FormID, data.Id, mapping.KfColumnSelector)).First();
+                    var q = new CamlQuery() { ViewXml = "<View><Query><Where><Eq><FieldRef Name='" + mapping.SpColumnId + "' /><Value Type='Text'>" + columnValue + "</Value></Eq></Where></Query></View>" };
+                    var r = spList.GetItems(q);
+                    Context.Load(r);
+                    Context.ExecuteQuery();
+                    if (r.Count > 0)
+                        return r.Last();
+                }
+            }
+            return null;
+        }
+
+        private void RemoveDuplicated(ref List<ListItem> toAdd, List<DataMapping> dataMappings, List spList, List<DataMapping> unique, ListItemCollection allItems)
+        {
+
+            List<int> toRemove = new List<int>();
+            List<ListItem> complement = new List<ListItem>();
+            int count = 0;
+            List<ListItem> queries = new List<ListItem>();
+            foreach (ListItem item in toAdd)
+            {
+                foreach (ListItem spItem in allItems)
+                {
+                    if (spItem[unique.First().SpColumnId].Equals(item[unique.First().SpColumnId]))
+                    {
+                        foreach (var key in dataMappings)
+                        {
+                            spItem[key.SpColumnId] = item[key.SpColumnId];
+                        }
+                        spItem.Update();
+                        complement.Add(spItem);
+                        toRemove.Add(count);
+                        break;
+                    }
+                }
+                count++;
+            }
+            int buff = 0;
+            foreach (int index in toRemove)
+            {
+                toAdd.RemoveAt(index - buff++);
+            }
+            toAdd.AddRange(complement);
+        }
+
+
+        private ListItemCollection getAllListItems(List spList)
+        {
+            var q = new CamlQuery() { ViewXml = "<View><Query /></View>" };
+            var r = spList.GetItems(q);
+            Context.Load(r);
+            Context.ExecuteQuery();
+            return r;
+        }
         /// <summary>
         /// Add and send item to Sharepointlist including Media 
         /// </summary>
@@ -383,32 +365,75 @@ namespace TestClientObjectModel
         /// <param name="dataToMark"></param>
         /// <param name="itemUpdated">In case of update, use this item</param>
         /// <returns></returns>
-        public async Task<ListItem> AddItemToList(List spList, List<DataMapping> dataMappings, FormData data, MarkDataReqViewModel dataToMark, ListItem itemUpdated = null)
+        public async Task<ListItem> AddItemToList(List spList, List<DataMapping> dataMappings, FormData data, MarkDataReqViewModel dataToMark, List<DataMapping> uniqueDataMappings)
         {
+            bool containsArray = false;
             Log.Debug($"Processing data : {data.Id}");
-            ListItem item;
-            if (itemUpdated == null) {
-                item = spList.AddItem(new ListItemCreationInformation());
-            } else {
-                item = itemUpdated;
-            }
+            List<ListItem> toAdd = new List<ListItem>();
+            List<List<string>> lines = new List<List<string>>();
+            List<string[]> results = new List<string[]>();
+            ListItemCollection allItems = getAllListItems(spList);
+            int toCreate = -1;
 
+            ListItem item = spList.AddItem(new ListItemCreationInformation());
+
+            var r = await NeedTobeUpdated(dataMappings, data, spList, uniqueDataMappings);
+            if (r != null)
+            {
+                item = r;
+            }
             foreach (var dataMapping in dataMappings)
             {
-                string columnValue = await KfApiManager.TransformText(data.FormID, data.Id, dataMapping.KfColumnSelector);
-                TOOLS.ConvertToCorrectTypeAndSet(item, dataMapping, columnValue);
-            }
+                string[] columnValues = await KfApiManager.TransformText(data.FormID, data.Id, dataMapping.KfColumnSelector);
 
+                TOOLS.ConvertToCorrectTypeAndSet(item, dataMapping, columnValues.First());
+                if (columnValues.Length > 1)
+                {
+                    if (toCreate.Equals(-1))
+                        toCreate = columnValues.Length - 1;
+
+                    containsArray = true;
+                    int cvc = 0;
+                    foreach (string columnValue in columnValues)
+                    {
+                        if (columnValue != columnValues.First())
+                        {
+                            if (toCreate > 0)
+                            {
+                                var tmp_item = spList.AddItem(new ListItemCreationInformation());
+                                foreach (var field in dataMappings)
+                                {
+                                    if (item.FieldValues.ContainsKey(field.SpColumnId))
+                                    {
+                                        tmp_item[field.SpColumnId] = item[field.SpColumnId];
+                                    }
+                                }
+                                TOOLS.ConvertToCorrectTypeAndSet(tmp_item, dataMapping, columnValue);
+                                toAdd.Add(tmp_item);
+                                toCreate--;
+                            }
+                            else
+                            {
+                                TOOLS.ConvertToCorrectTypeAndSet(toAdd[cvc++], dataMapping, columnValue);
+                            }
+                        }
+                    }
+                }
+            }
+            toAdd.Insert(0, item);
+            if (containsArray)
+                RemoveDuplicated(ref toAdd, dataMappings, spList, uniqueDataMappings, allItems);
             try
             {
-                lock (SharePointManager.locky)
+                lock (locky)
                 {
-                    item.Update();
+                    foreach (var add in toAdd)
+                    {
+                        add.Update();
+                    }
                     Context.ExecuteQuery();
                     dataToMark.Ids.Add(data.Id);
-                    Log.Debug($"Data {data.Id} sent to Sharepoint successefully");
                 }
-
 
                 var x = $"{KfApiManager.KfApiUrl}/rest/v3/forms/{data.FormID}/data/{data.Id}/all_medias";
                 var response = await KfApiManager.HttpClient.GetAsync(x);
@@ -424,38 +449,47 @@ namespace TestClientObjectModel
                         pjInfo.ContentStream = ms;
                         pjInfo.FileName = response.Content.Headers.ContentDisposition.FileName;
 
-                        Attachment pj = item.AttachmentFiles.Add(pjInfo);
+                        Attachment pj = toAdd.Last().AttachmentFiles.Add(pjInfo);
 
                         lock (locky)
                         {
                             Context.Load(pj);
                             Context.ExecuteQuery();
-
                         }
                     }
                 }
 
-
+                /*   foreach (var item in items)
+                   {
+                       item.DeleteObject();
+                   }*/
+                Context.ExecuteQuery();
+                Log.Debug($"Data {data.Id} sent to Sharepoint successefully");
             }
             catch (Exception)
             {
                 throw;
             }
 
-            return item;
+            return null;
         }
 
 
         /// <summary>
-        /// Delete delet existing item used in the case of Unique column in sharepoint list
+        /// Get all items of a list
         /// </summary>
         /// <param name="spList">guid of sp List</param>
-        /// <param name="spUniqueColumnName">sharepoint unique column name</param>
-        /// <param name="kfUniqueColumnvalue">unique column value</param>
-        public ListItem RetrieveExistingItem(List spList, string spUniqueColumnName, string kfUniqueColumnvalue)
+        public List<ListItem> GetItems(List spList)
         {
             CamlQuery cmQuery = new CamlQuery();
-            cmQuery.ViewXml = $"<View><Query><Where><Eq><FieldRef Name='{spUniqueColumnName}'/><Value Type='Text'>{kfUniqueColumnvalue}</Value></Eq></Where></Query><RowLimit>10</RowLimit></View>";
+
+
+
+            CamlQuery query = CamlQuery.CreateAllItemsQuery(100);
+            ListItemCollection items = spList.GetItems(query);
+            Context.Load(items);
+            Context.ExecuteQuery();
+
 
             lock (locky)
             {
@@ -463,7 +497,7 @@ namespace TestClientObjectModel
                 Context.Load(collListItem);
                 Context.ExecuteQuery();
 
-                return collListItem.First();
+                return collListItem.ToList();
             }
 
         }
@@ -508,7 +542,7 @@ namespace TestClientObjectModel
         /// <param name="folderPath">path in the spLibrary</param>
         /// <param name="fileNamePrefix"> file name prefixe</param>
         /// <returns></returns>
-        public string GetFileName(HttpResponseMessage response, List spLibrary, string folderPath,string fileNamePrefix)
+        public string GetFileName(HttpResponseMessage response, List spLibrary, string folderPath, string fileNamePrefix)
         {
             string fileNameText;
             if (response.Content.Headers.ContentDisposition == null)
@@ -519,39 +553,28 @@ namespace TestClientObjectModel
                     fileNameText = contentDisposition.ToArray()[0];
                     var cp = new ContentDisposition(fileNameText);
                     fileNameText = cp.FileName;
-                } else
+                }
+                else
                 {
                     fileNameText = "";
                 }
-            } else
+            }
+            else
             {
                 fileNameText = response.Content.Headers.ContentDisposition.FileName.ToString();
             }
-            string fileName = fileNamePrefix +TOOLS.CleanString(fileNameText);
-            // var allFiles = GetSpFiles(spLibrary, folderPath);
+            string fileName = fileNamePrefix + TOOLS.CleanString(fileNameText);
+
 
             int i = 2;
             string fileNameWithoutExt = fileName.Substring(0, fileName.IndexOf("."));
             string extention = fileName.Substring(fileName.IndexOf(".") + 1, fileName.Length - fileName.IndexOf(".") - 1);
-            // bool containsFile = true;
+
 
             Guid g;
             g = Guid.NewGuid();
             string guidParsed = g.ToString().Substring(0, 13);
             fileName = fileNameWithoutExt + $".{guidParsed}." + extention;
-
-            // do
-            // {
-            //     if (allFiles.Contains(fileName))
-            //     {
-            //         fileName = fileNameWithoutExt + $"({i})." + extention;
-            //         i++;
-            //         containsFile = true;
-            //     } else {
-            //         containsFile = false;
-            //     }
-
-            // } while (containsFile);
 
             return fileName;
         }
@@ -575,7 +598,8 @@ namespace TestClientObjectModel
                 dataSchema = dataSchema.Remove(startIndex, (endIndex - startIndex) + 2);
                 try
                 {
-                    if (item[columnName] != null){
+                    if (item[columnName] != null)
+                    {
                         dataSchema = dataSchema.Insert(startIndex, item[columnName].ToString());
                     }
                 }
@@ -729,7 +753,7 @@ namespace TestClientObjectModel
                 if (response.IsSuccessStatusCode)
                 {
                     string filePath = path;
-                    string fileName = GetFileName(response, periodicexport.SpLibrary, Path.Combine(periodicexport.SpWebSiteUrl, filePath),fileNamePrefix);
+                    string fileName = GetFileName(response, periodicexport.SpLibrary, Path.Combine(periodicexport.SpWebSiteUrl, filePath), fileNamePrefix);
 
                     using (var ms = new MemoryStream())
                     {

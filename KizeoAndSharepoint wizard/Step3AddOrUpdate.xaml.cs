@@ -56,7 +56,7 @@ namespace KizeoAndSharepoint_wizard
             }
             catch (Exception ee)
             {
-                MessageBox.Show("Impossible de charger la liste SharePoint.\nVeuillez vérifier que:\n- Le client utilisé est bien associé l'url SharePoint renseigné\n- L'url est correct\n- L'ID de la liste est correct");
+                MessageBox.Show("SharePoint's list couldn't be loaded.\nPlease check out that:\n- The client is associated to the SharePoint url you entered.\n- The url is well formated");
             }
 
         }

@@ -44,7 +44,7 @@ namespace TestClientObjectModel
                 Config = GetConfig(ConfFile);
                 Log.Debug($"Configuration succeeded");
 
-                if (Config==null || Config.KizeoConfig == null || Config.SharepointConfig == null)
+                if (Config == null || Config.KizeoConfig == null || Config.SharepointConfig == null)
                 {
                     TOOLS.LogErrorAndExitProgram("The config file is empty or some data is missing.");
                 }
@@ -52,7 +52,7 @@ namespace TestClientObjectModel
                 KfApiManager = new KizeoFormsApiManager(Config.KizeoConfig.Url, Config.KizeoConfig.Token);
                 HttpClient = KfApiManager.HttpClient;
 
-                SpManager = new SharePointManager(Config.SharepointConfig.SPDomain, Config.SharepointConfig.SPClientId, Config.SharepointConfig.SPClientSecret, Config.SharepointConfig.SPTenantID, KfApiManager);
+                SpManager = new SharePointManager(Config.SharepointConfig.SPDomain, Config.SharepointConfig.SPClientId, Config.SharepointConfig.SPClientSecret, KfApiManager);
                 Context = SpManager.Context;
 
                 FillKfExtListsFromSp().Wait();
@@ -80,9 +80,9 @@ namespace TestClientObjectModel
 
         }
 
-       
 
-        
+
+
 
         /// <summary>
         /// Fill kizeo Forms External list with SharePoint data acording to the Config file
@@ -167,7 +167,6 @@ namespace TestClientObjectModel
                         formData = await response.Content.ReadAsAsync<FormDatasRespViewModel>();
                         if (formData.Data == null)
                             TOOLS.LogErrorAndExitProgram($"Can not find a form with for id {formId}, please check if this is a valid id.");
-
                         Log.Debug($"{formData.Data.Count} data retrieved successfully from form.");
 
                         Log.Debug("Loading Sharepoint's list");
@@ -180,36 +179,10 @@ namespace TestClientObjectModel
                         {
                             try
                             {
-                                await SpManager.AddItemToList(spList, formToSpList.DataMapping, data, dataToMark);
+                                var uniqueColumns = formToSpList.DataMapping.Where(dm => dm.SpecialType == "Unique").ToList();
+                                await SpManager.AddItemToList(spList, formToSpList.DataMapping, data, dataToMark, uniqueColumns);
                             }
                             catch (ServerException ex)
-                            {
-                                if (ex.ServerErrorTypeName == "Microsoft.SharePoint.SPDuplicateValuesFoundException")
-                                {
-                                    Log.Warn($"Datum {data.Id} already exists, it will be updated.");
-                                    var uniqueColumn = formToSpList.DataMapping.Where(dm => dm.SpecialType == "Unique").First();
-                                    var kfUniqueColumnvalue = await KfApiManager.TransformText(data.FormID, data.Id, uniqueColumn.KfColumnSelector);
-
-                                    ListItem item = SpManager.RetrieveExistingItem(spList, uniqueColumn.SpColumnId, kfUniqueColumnvalue);
-
-                                    try
-                                    {
-                                        await SpManager.AddItemToList(spList, formToSpList.DataMapping, data, dataToMark, item);
-
-                                    }
-                                    catch (Exception ex2)
-                                    {
-                                        TOOLS.LogErrorwithoutExitProgram($"Error while sending item {data.Id} from form {data.FormID} to the Sharepoint's list {spList.Id}  : " + ex2.Message);
-                                    }
-
-                                }
-                                else
-                                {
-                                    TOOLS.LogErrorwithoutExitProgram($"Error while sending item {data.Id} from form {data.FormID} to the Sharepoint's list {spList.Id}  : " + ex.Message);
-                                }
-
-                            }
-                            catch (Exception ex)
                             {
                                 TOOLS.LogErrorwithoutExitProgram($"Error while sending item {data.Id} from form {data.FormID} to the Sharepoint's list {spList.Id}  : " + ex.Message);
                             }
@@ -294,11 +267,11 @@ namespace TestClientObjectModel
                                 Log.Debug($"---Processing export : {export.Id}");
 
                                 SpManager.RunExport("Initial Type", $"rest/v3/forms/{formId}/data/{data.Id}/exports/{export.Id}", export.ToInitialType, formToSpLibrary, data, export.initialTypePath);
-                                SpManager.RunExport("Pdf Type", $"rest/v3/forms/{formId}/data/{data.Id}/exports/{export.Id}/pdf", export.ToPdf, formToSpLibrary, data, export.initialTypePath);
+                                SpManager.RunExport("Pdf Type", $"rest/v3/forms/{formId}/data/{data.Id}/exports/{export.Id}/pdf", export.ToPdf, formToSpLibrary, data, export.PdfPath);
 
                             }
                         }
-                        
+
                         dataToMark.Ids.Add(data.Id);
                     }
 
@@ -395,21 +368,22 @@ namespace TestClientObjectModel
         {
             LockedHashset<string> allConfigPaths = new LockedHashset<string>();
 
-            if (formToSpLibrary.ToStandardPdf) allConfigPaths.Add(await KfApiManager.TransformText(data.FormID, data.Id, formToSpLibrary.StandardPdfPath));
-            if (formToSpLibrary.ToExcelList) allConfigPaths.Add(await KfApiManager.TransformText(data.FormID, data.Id, formToSpLibrary.ExcelListPath));
-            if (formToSpLibrary.ToCsv) allConfigPaths.Add(await KfApiManager.TransformText(data.FormID, data.Id, formToSpLibrary.CsvPath));
-            if (formToSpLibrary.ToCsvCustom) allConfigPaths.Add(await KfApiManager.TransformText(data.FormID, data.Id, formToSpLibrary.CsvCustomPath));
-            if (formToSpLibrary.ToExcelListCustom) allConfigPaths.Add(await KfApiManager.TransformText(data.FormID, data.Id, formToSpLibrary.ExcelListCustomPath));
+            if (formToSpLibrary.ToStandardPdf) allConfigPaths.Add((await KfApiManager.TransformText(data.FormID, data.Id, formToSpLibrary.StandardPdfPath)).First());
+            if (formToSpLibrary.ToExcelList) allConfigPaths.Add((await KfApiManager.TransformText(data.FormID, data.Id, formToSpLibrary.ExcelListPath)).First());
+            if (formToSpLibrary.ToCsv) allConfigPaths.Add((await KfApiManager.TransformText(data.FormID, data.Id, formToSpLibrary.CsvPath)).First());
+            if (formToSpLibrary.ToCsvCustom) allConfigPaths.Add((await KfApiManager.TransformText(data.FormID, data.Id, formToSpLibrary.CsvCustomPath)).First());
+            if (formToSpLibrary.ToExcelListCustom) allConfigPaths.Add((await KfApiManager.TransformText(data.FormID, data.Id, formToSpLibrary.ExcelListCustomPath)).First());
 
             if (formToSpLibrary.Exports != null && formToSpLibrary.Exports.Count > 0)
             {
-                var pdfPaths = formToSpLibrary.Exports.Where(e => e.PdfPath != null).Select(e => e.PdfPath).ToList();
-                foreach (var pdfPath in pdfPaths)
-                    allConfigPaths.Add(await KfApiManager.TransformText(data.FormID, data.Id, pdfPath));
+                var pdfPaths = formToSpLibrary.Exports.Where(e => e.ToPdf).Select(e => e.PdfPath).ToList();
 
-                var initialTypepaths = formToSpLibrary.Exports.Where(e => e.initialTypePath != null).Select(e => e.initialTypePath).ToList();
+                foreach (var pdfPath in pdfPaths)
+                    allConfigPaths.Add((await KfApiManager.TransformText(data.FormID, data.Id, pdfPath)).First());
+
+                var initialTypepaths = formToSpLibrary.Exports.Where(e => e.ToInitialType).Select(e => e.initialTypePath).ToList();
                 foreach (var initialTypePath in initialTypepaths)
-                    allConfigPaths.Add(await KfApiManager.TransformText(data.FormID, data.Id, initialTypePath));
+                    allConfigPaths.Add((await KfApiManager.TransformText(data.FormID, data.Id, initialTypePath)).First());
             }
 
             return allConfigPaths;
@@ -473,7 +447,7 @@ namespace TestClientObjectModel
 
         private static void PeriodicExportsEvent(object source, ElapsedEventArgs e)
         {
-            
+
             try
             {
 
@@ -501,16 +475,16 @@ namespace TestClientObjectModel
             string path = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Kizeo");
             string filePath = Path.Combine(path, ConfFilePath);
 
-            if(!Directory.Exists(path))
+            if (!Directory.Exists(path))
             {
                 Directory.CreateDirectory(path);
             }
-
+            
             if (!System.IO.File.Exists(filePath))
             {
                 using (FileStream fs = System.IO.File.Create(filePath))
                 {
-
+                  
                 }
             }
 

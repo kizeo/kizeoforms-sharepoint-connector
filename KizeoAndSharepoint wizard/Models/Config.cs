@@ -47,8 +47,6 @@ namespace KizeoAndSharepoint_wizard.Models
 
         [JsonProperty("domain")]
         public string SPDomain { get { return _SPDomain; } set { _SPDomain = value; this.OnPropertyChanged(); } }
-        [JsonProperty("tenant")]
-        public string SPTenantID { get { return _SPTenantID; } set { _SPTenantID = value; this.OnPropertyChanged(); } }
         [JsonProperty("client")]
         public string SPClientId { get { return _SPClientId; } set { _SPClientId = value; this.OnPropertyChanged(); } }
         [JsonProperty("secret")]
@@ -69,7 +67,7 @@ namespace KizeoAndSharepoint_wizard.Models
 
     public class KizeoConfig : INotifyPropertyChanged
     {
-        private string _Url;
+        private string _Url= "https://www.kizeoforms.com";
         private string _Token;
 
         [JsonProperty("url")] public string Url { get { return _Url; } set { _Url = value; OnPropertyChanged(); } }
@@ -78,10 +76,7 @@ namespace KizeoAndSharepoint_wizard.Models
         public event PropertyChangedEventHandler PropertyChanged;
         private void OnPropertyChanged([CallerMemberName] string caller = "")
         {
-            if (PropertyChanged != null)
-            {
-                PropertyChanged(this, new PropertyChangedEventArgs(caller));
-            }
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(caller));
         }
 
         [JsonIgnore]
@@ -103,10 +98,7 @@ namespace KizeoAndSharepoint_wizard.Models
         public event PropertyChangedEventHandler PropertyChanged;
         private void OnPropertyChanged([CallerMemberName] string caller = "")
         {
-            if (PropertyChanged != null)
-            {
-                PropertyChanged(this, new PropertyChangedEventArgs(caller));
-            }
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(caller));
         }
 
         public override string ToString()

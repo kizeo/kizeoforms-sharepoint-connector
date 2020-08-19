@@ -2,14 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using System.Security;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Collections;
-using System.IO;
-using Ionic.Zip;
 
 namespace TestClientObjectModel
 {
@@ -119,7 +112,7 @@ namespace TestClientObjectModel
                     else
                     {
                         TOOLS.LogErrorwithoutExitProgram($"Error Parsing date value : {columnValue}");
-                        item[dataMapping.SpColumnId] = "";
+                    item[dataMapping.SpColumnId] = "";
                     }
                 }
                 else

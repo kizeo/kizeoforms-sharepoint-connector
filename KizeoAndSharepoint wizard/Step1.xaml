@@ -67,7 +67,7 @@
 
 
 
-            <GroupBox DataContext="{Binding SharepointConfig}" Header="Sharepoint settings" Grid.Row="1"  Padding="5,15,5,5" Margin="15,15,15,15" Name="SharepointSetting">
+            <GroupBox DataContext="{Binding SharepointConfig}" Header="Sharepoint settings" Grid.Row="1"  Padding="5,15,5,5" Margin="15,15,15,32" Name="SharepointSetting">
 
                 <Grid Margin="0,0,0,24">
 
@@ -89,8 +89,6 @@
                     <TextBox Name="sp_client_id" Grid.Row="1" Grid.Column="1" Style="{StaticResource FormTxtStyle}" Text="{Binding SPClientId}"/>
                     <Label Content="Client Secret" Grid.Column="0"  Grid.Row="2"/>
                     <TextBox  Name="sp_client_secret" Grid.Row="2" Grid.Column="1" Margin="5" Text="{Binding SPClientSecret}" />
-                    <Label Content="Tenant ID" Grid.Column="0" Grid.Row="3" Margin="0,0,0,4"/>
-                    <TextBox x:Name="sp_tenant_id" Grid.Row="3" Grid.Column="1"  Style="{StaticResource FormTxtStyle}" Text="{Binding SPTenantID}" Margin="5,5,5,4" />
                 </Grid>
             </GroupBox>
 

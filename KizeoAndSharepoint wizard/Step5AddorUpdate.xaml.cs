@@ -61,7 +61,8 @@ namespace KizeoAndSharepoint_wizard
                     return true;
 
                 }
-                catch (Exception e) { lib_sp.BorderBrush = System.Windows.Media.Brushes.Red; Console.WriteLine(e.ToString()); MessageBox.Show("Impossible de charger la librairie SharePoint.\nVeuillez vérifier que:\n- Le client utilisé est bien associé l'url SharePoint renseigné\n- L'url est correct\n- L'ID de la librairie est correct");
+                catch (Exception e) { lib_sp.BorderBrush = System.Windows.Media.Brushes.Red;
+                    MessageBox.Show("SharePoint's list couldn't be loaded.\nPlease check out that:\n- The client is associated to the SharePoint url you entered.\n- The url is well formated");
                 }
             }
             return false;
