@@ -225,7 +225,6 @@ namespace TestClientObjectModel
                 {
                     TOOLS.LogErrorwithoutExitProgram(Ex.Message + $"\n" + " filepath : error while uploading file :" + fcInfo.Url);
                     TOOLS.LogErrorwithoutExitProgram("This error appears when an illegal character is detected in file path: /, \\");
-                    /*  TOOLS.LogErrorwithoutExitProgram(Ex.Message + $"\n" + " filepath : error while uploading file :" + fcInfo.Url + "\n Stack Trace : " + Ex.StackTrace);*/
                 }
 
 
@@ -431,7 +430,7 @@ namespace TestClientObjectModel
                         add.Update();
                     }
                     Context.ExecuteQuery();
-                 //   dataToMark.Ids.Add(data.Id);
+                    dataToMark.Ids.Add(data.Id);
                 }
 
                 var x = $"{KfApiManager.KfApiUrl}/rest/v3/forms/{data.FormID}/data/{data.Id}/all_medias";
