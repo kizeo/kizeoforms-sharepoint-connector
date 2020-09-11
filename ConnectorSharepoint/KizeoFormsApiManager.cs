@@ -34,7 +34,7 @@ namespace TestClientObjectModel
                 if (string.IsNullOrEmpty(token))
                     throw new ArgumentException("Kizeo forms authentification token can not be null");
 
-                HttpClient.DefaultRequestHeaders.Add("Authorization", token);
+                HttpClient.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", token);
 
                 TestKfApi(baseUrl).Wait();
                 Log.Debug($"Configuration succeeded");
@@ -88,7 +88,7 @@ namespace TestClientObjectModel
             {
 
                 HttpResponseMessage response = await HttpClient.PostAsJsonAsync($"{KfApiUrl}/rest/v3/forms/{formId}/transformText",
-                                    new { textToTransform = columnSelector, data_ids = new string[] { dataId } });
+                                    new { textToTransform = columnSelector, data_ids = new string[] { dataId } }); 
 
                 TransformTextRespViewModel transformedText = await response.Content.ReadAsAsync<TransformTextRespViewModel>();
                 return transformedText.TextDatas.Where(td => td.Data_id == dataId).First().Text;

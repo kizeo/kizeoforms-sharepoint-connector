@@ -171,6 +171,7 @@ namespace TestClientObjectModel
 
                         Log.Debug("Loading Sharepoint's list");
                         var spList = SpManager.LoadSpList(formToSpList.SpListId);
+                        ListItemCollection allItems = SpManager.getAllListItems(spList);
                         Log.Debug("Sharepoint's list succesfully loaded");
 
                         dataToMark = new MarkDataReqViewModel();
@@ -180,7 +181,7 @@ namespace TestClientObjectModel
                             try
                             {
                                 var uniqueColumns = formToSpList.DataMapping.Where(dm => dm.SpecialType == "Unique").ToList();
-                                await SpManager.AddItemToList(spList, formToSpList.DataMapping, data, dataToMark, uniqueColumns);
+                                await SpManager.AddItemToList(spList, formToSpList.DataMapping, data, dataToMark, uniqueColumns, allItems);
                             }
                             catch (ServerException ex)
                             {
@@ -479,12 +480,12 @@ namespace TestClientObjectModel
             {
                 Directory.CreateDirectory(path);
             }
-            
+
             if (!System.IO.File.Exists(filePath))
             {
                 using (FileStream fs = System.IO.File.Create(filePath))
                 {
-                  
+
                 }
             }
 
