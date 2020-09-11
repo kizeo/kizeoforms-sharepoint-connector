@@ -223,9 +223,8 @@ namespace TestClientObjectModel
                 }
                 catch (Exception Ex)
                 {
-
                     TOOLS.LogErrorwithoutExitProgram(Ex.Message + $"\n" + " filepath : error while uploading file :" + fcInfo.Url);
-                    /*  TOOLS.LogErrorwithoutExitProgram(Ex.Message + $"\n" + " filepath : error while uploading file :" + fcInfo.Url + "\n Stack Trace : " + Ex.StackTrace);*/
+                    TOOLS.LogErrorwithoutExitProgram("This error appears when an illegal character is detected in file path: /, \\");
                 }
 
 
@@ -348,7 +347,7 @@ namespace TestClientObjectModel
         }
 
 
-        private ListItemCollection getAllListItems(List spList)
+        public ListItemCollection getAllListItems(List spList)
         {
             var q = new CamlQuery() { ViewXml = "<View><Query /></View>" };
             var r = spList.GetItems(q);
@@ -365,14 +364,13 @@ namespace TestClientObjectModel
         /// <param name="dataToMark"></param>
         /// <param name="itemUpdated">In case of update, use this item</param>
         /// <returns></returns>
-        public async Task<ListItem> AddItemToList(List spList, List<DataMapping> dataMappings, FormData data, MarkDataReqViewModel dataToMark, List<DataMapping> uniqueDataMappings)
+        public async Task<ListItem> AddItemToList(List spList, List<DataMapping> dataMappings, FormData data, MarkDataReqViewModel dataToMark, List<DataMapping> uniqueDataMappings, ListItemCollection allItems)
         {
             bool containsArray = false;
             Log.Debug($"Processing data : {data.Id}");
             List<ListItem> toAdd = new List<ListItem>();
             List<List<string>> lines = new List<List<string>>();
             List<string[]> results = new List<string[]>();
-            ListItemCollection allItems = getAllListItems(spList);
             int toCreate = -1;
 
             ListItem item = spList.AddItem(new ListItemCreationInformation());

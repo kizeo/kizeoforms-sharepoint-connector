@@ -31,7 +31,7 @@ namespace KizeoAndSharepoint_wizard
         {
             InitializeComponent();
             spmeta.Visibility = Visibility.Hidden;
-         
+
 
         }
 
@@ -63,6 +63,7 @@ namespace KizeoAndSharepoint_wizard
 
         private void ButtonAjouterExport_Click(object sender, RoutedEventArgs e)
         {
+            if (PreventInvalidCharacters()) return;
             var formToSpLibrary = (FormToSpLibrary)DataContext;
             if (formToSpLibrary.Exports == null)
             {
@@ -72,9 +73,21 @@ namespace KizeoAndSharepoint_wizard
             formToSpLibrary.Exports.Add(new Export { Id = txtIdExport.Text, ToInitialType = cbToInitial.IsChecked ?? false, InitialTypePath = txtInitialTypePath.Text, ToPdf = cbToPdf.IsChecked ?? false, PdfPath = txtPdfPath.Text });
         }
 
+        private bool PreventInvalidCharacters()
+        {
+            if (txtInitialTypePath.Text.Contains("/") || txtInitialTypePath.Text.Contains("\\"))
+            {
+                txtInitialTypePath.BorderBrush = Brushes.Red;
+                MessageBox.Show("Incorrect path for inital type path. Illegal characters: /, \\");
+                return true;
+            }
+            return false;
+        }
+
         private void ButtonValider_Click(object sender, RoutedEventArgs e)
         {
             const string list_mask = "00000000-0000-0000-0000-000000000000";
+
             if (
           !string.IsNullOrEmpty(spLib.Text)
           && (
@@ -82,7 +95,6 @@ namespace KizeoAndSharepoint_wizard
           ) && spLib.Text.Length == 36
       )
             {
-                Console.WriteLine("b");
                 try
                 {
                     var spList = Context.Web.Lists.GetById(new Guid(spLib.Text));
@@ -103,7 +115,7 @@ namespace KizeoAndSharepoint_wizard
                 {
                     spLib.BorderBrush = Brushes.Red;
                     MessageBox.Show("Impossible de charger la librairie SharePoint.\nVeuillez vérifier que:\n- Le client utilisé est bien associé l'url SharePoint renseigné\n- L'url est correct\n- L'ID de la librairie est correct");
-                  
+
                 }
             }
             else
@@ -119,6 +131,7 @@ namespace KizeoAndSharepoint_wizard
         {
             if ((Export)lvExports.SelectedItem != null)
             {
+                txtInitialTypePath.BorderBrush = Brushes.Gray;
                 var export = (Export)lvExports.SelectedItem;
                 txtIdExport.Text = export.Id;
                 cbToInitial.IsChecked = export.ToInitialType;
@@ -135,13 +148,13 @@ namespace KizeoAndSharepoint_wizard
                 Export item = (Export)lvExports.SelectedItem;
                 ((FormToSpLibrary)DataContext).Exports.Remove(item);
             }
-
         }
 
         private void ButtonUpdateExport_Click(object sender, RoutedEventArgs e)
         {
             if ((Export)lvExports.SelectedItem != null)
             {
+                if (PreventInvalidCharacters()) return;
                 Export item = (Export)lvExports.SelectedItem;
                 item.Id = txtIdExport.Text;
                 item.InitialTypePath = txtInitialTypePath.Text;
@@ -158,7 +171,7 @@ namespace KizeoAndSharepoint_wizard
 
         }
 
-      
-     
+
+
     }
 }
