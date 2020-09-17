@@ -259,7 +259,7 @@ namespace KizeoAndSharepoint_wizard
                 HttpClient.DefaultRequestHeaders.Accept.Clear();
                 HttpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
                 HttpClient.DefaultRequestHeaders.TryAddWithoutValidation("Authorization", txtToken.Text);
-                ((Config)DataContext).KizeoConfig.HttpClient = HttpClient; // ca plante
+                ((Config)DataContext).KizeoConfig.HttpClient = HttpClient;
                 var testToken = await HttpClient.GetAsync($"{txtKfUrl.Text}/rest/v3/testapi/sharepoint");
 
                 return testToken.IsSuccessStatusCode;
