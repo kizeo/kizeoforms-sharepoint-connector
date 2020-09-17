@@ -75,10 +75,10 @@ namespace KizeoAndSharepoint_wizard
 
         private bool PreventInvalidCharacters()
         {
-            if (txtInitialTypePath.Text.Contains("/") || txtInitialTypePath.Text.Contains("\\"))
+            if (txtInitialTypePath.Text.Contains("/") || txtInitialTypePath.Text.Contains("\\") || txtInitialTypePath.Text.Equals(""))
             {
                 txtInitialTypePath.BorderBrush = Brushes.Red;
-                MessageBox.Show("Incorrect path for inital type path. Illegal characters: /, \\");
+                MessageBox.Show("Incorrect path for inital type path. Illegal characters: /, \\, empty values");
                 return true;
             }
             return false;
