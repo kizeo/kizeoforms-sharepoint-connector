@@ -13,6 +13,11 @@ Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "SetupConnector", "SetupConn
 EndProject
 Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "SetupSharePoint", "SetupSHarePoint\SetupSHarePoint.vdproj", "{893289F6-7C8D-4BD0-9CA8-C7537DC339D0}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{F5AAE9F2-9FD1-4CB2-9CBD-587A64FC831D}"
+	ProjectSection(SolutionItems) = preProject
+		version.txt = version.txt
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		All|Any CPU = All|Any CPU
