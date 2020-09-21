@@ -4,9 +4,9 @@
 "ProjectType" = "8:{978C614F-708E-4E1A-B201-565925725DBA}"
 "IsWebType" = "8:FALSE"
 "ProjectName" = "8:SetupSharePoint"
-"LanguageId" = "3:1036"
+"LanguageId" = "3:1033"
 "CodePage" = "3:1252"
-"UILanguageId" = "3:1036"
+"UILanguageId" = "3:1033"
 "SccProjectName" = "8:"
 "SccLocalPath" = "8:"
 "SccAuxPath" = "8:"
@@ -653,6 +653,18 @@
         {
         "MsmKey" = "8:_4811A8504255E0F474FE9708A0EE3295"
         "OwnerKey" = "8:_12E7AF4F139B444C9FCD2802CD596369"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_4811A8504255E0F474FE9708A0EE3295"
+        "OwnerKey" = "8:_4FDF1F0C28D02646E2971C36464A8407"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_4811A8504255E0F474FE9708A0EE3295"
+        "OwnerKey" = "8:_3F385D7F8DA4B1CBAA6BC0D5FCCB370B"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
@@ -11786,7 +11798,7 @@
             {
             "AssemblyRegister" = "3:1"
             "AssemblyIsInGAC" = "11:FALSE"
-            "AssemblyAsmDisplayName" = "8:KizeoAndSharepoint wizard, Version=1.2.1.0, Culture=neutral, processorArchitecture=MSIL"
+            "AssemblyAsmDisplayName" = "8:KizeoAndSharepoint wizard, Version=1.2.2.0, Culture=neutral, processorArchitecture=MSIL"
                 "ScatterAssemblies"
                 {
                     "_EB759EFC8FAC463196E22D99C3C701B6"
@@ -12473,7 +12485,7 @@
         }
         "MsiBootstrapper"
         {
-        "LangId" = "3:1036"
+        "LangId" = "3:1033"
         "RequiresElevation" = "11:FALSE"
         }
         "Product"
@@ -12481,7 +12493,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:Kizeo SharePoint"
         "ProductCode" = "8:{05C8CA98-BAC4-404D-82BE-E173A8B82CD7}"
-        "PackageCode" = "8:{129562F3-F925-45FC-A3E5-CC256D332B42}"
+        "PackageCode" = "8:{5C3EDCFC-9DA9-4119-9ECA-E0DB909193F0}"
         "UpgradeCode" = "8:{FE190E4A-4447-4BE0-9F10-E2B638621F9A}"
         "AspNetVersion" = "8:4.0.30319.0"
         "RestartWWWService" = "11:FALSE"

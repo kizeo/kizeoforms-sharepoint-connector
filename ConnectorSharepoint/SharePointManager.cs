@@ -369,8 +369,7 @@ namespace TestClientObjectModel
             bool containsArray = false;
             Log.Debug($"Processing data : {data.Id}");
             List<ListItem> toAdd = new List<ListItem>();
-            List<List<string>> lines = new List<List<string>>();
-            List<string[]> results = new List<string[]>();
+            bool shouldFulfillOtherLines = false;
             int toCreate = -1;
 
             ListItem item = spList.AddItem(new ListItemCreationInformation());
@@ -383,10 +382,10 @@ namespace TestClientObjectModel
             foreach (var dataMapping in dataMappings)
             {
                 string[] columnValues = await KfApiManager.TransformText(data.FormID, data.Id, dataMapping.KfColumnSelector);
-
                 TOOLS.ConvertToCorrectTypeAndSet(item, dataMapping, columnValues.First());
-                if (columnValues.Length > 1)
+                if (columnValues.Length > 1) // if there's at least one row to add
                 {
+                    shouldFulfillOtherLines = true;
                     if (toCreate.Equals(-1))
                         toCreate = columnValues.Length - 1;
 
@@ -399,6 +398,7 @@ namespace TestClientObjectModel
                             if (toCreate > 0)
                             {
                                 var tmp_item = spList.AddItem(new ListItemCreationInformation());
+
                                 foreach (var field in dataMappings)
                                 {
                                     if (item.FieldValues.ContainsKey(field.SpColumnId))
@@ -417,6 +417,14 @@ namespace TestClientObjectModel
                         }
                     }
                 }
+
+                else if (shouldFulfillOtherLines)
+                {
+                    foreach (var line in toAdd)
+                    {
+                        line[dataMapping.SpColumnId] = columnValues.First();
+                    }
+                }
             }
             toAdd.Insert(0, item);
             if (containsArray)
@@ -430,7 +438,7 @@ namespace TestClientObjectModel
                         add.Update();
                     }
                     Context.ExecuteQuery();
-                    dataToMark.Ids.Add(data.Id);
+                    // dataToMark.Ids.Add(data.Id);
                 }
 
                 var x = $"{KfApiManager.KfApiUrl}/rest/v3/forms/{data.FormID}/data/{data.Id}/all_medias";
