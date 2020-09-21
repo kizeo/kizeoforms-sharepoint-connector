@@ -44,6 +44,7 @@ namespace KizeoAndSharepoint_wizard
                     if (System.Windows.Forms.MessageBox.Show("A new version is available, Do you want to download it?", "KizeoForms SharePoint Connector", System.Windows.Forms.MessageBoxButtons.YesNo, System.Windows.Forms.MessageBoxIcon.Question) == System.Windows.Forms.DialogResult.Yes)
                     {
                     }
+
                 }
             }
             catch { }
