@@ -438,7 +438,7 @@ namespace TestClientObjectModel
                         add.Update();
                     }
                     Context.ExecuteQuery();
-                    // dataToMark.Ids.Add(data.Id);
+                    dataToMark.Ids.Add(data.Id);
                 }
 
                 var x = $"{KfApiManager.KfApiUrl}/rest/v3/forms/{data.FormID}/data/{data.Id}/all_medias";

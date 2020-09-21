@@ -24,6 +24,7 @@ using System.Text;
 using System.Web.Script.Serialization;
 using AuthenticationManager = OfficeDevPnP.Core.AuthenticationManager;
 
+
 namespace KizeoAndSharepoint_wizard
 {
     /// <summary>
@@ -34,6 +35,18 @@ namespace KizeoAndSharepoint_wizard
         public Step1()
         {
             InitializeComponent();
+
+            WebClient webClient = new WebClient();
+            try
+            {
+                if (webClient.DownloadString("https://raw.githubusercontent.com/Sozary/kizeoforms-sharepoint-connector/master/version.txt").Contains(GetType().Assembly.GetName().Version.ToString()))
+                {
+                    if (System.Windows.Forms.MessageBox.Show("A new version is available, Do you want to download it?", "KizeoForms SharePoint Connector", System.Windows.Forms.MessageBoxButtons.YesNo, System.Windows.Forms.MessageBoxIcon.Question) == System.Windows.Forms.DialogResult.Yes)
+                    {
+                    }
+                }
+            }
+            catch { }
 
             Config config = new Config();
 
