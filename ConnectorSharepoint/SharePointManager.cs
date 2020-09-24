@@ -630,7 +630,7 @@ namespace TestClientObjectModel
             var spList = Context.Web.Lists.GetById(listId);
 
             Context.Load(spList);
-
+            
             try
             {
                 lock (locky)
@@ -642,7 +642,7 @@ namespace TestClientObjectModel
             }
             catch (Exception ex)
             {
-                TOOLS.LogErrorAndExitProgram($"Error while loading Sharepoint list {spList.Id} " + ex.Message);
+                TOOLS.LogErrorAndExitProgram($"Error while loading Sharepoint list {listId} " + ex.Message);
                 return null;
             }
         }
