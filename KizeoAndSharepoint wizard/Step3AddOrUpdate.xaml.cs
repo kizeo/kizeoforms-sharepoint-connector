@@ -42,7 +42,6 @@ namespace KizeoAndSharepoint_wizard
             metadata.Show();
             try
             {
-                /*      var spList = Context.Web.Lists.GetById(((FormToSpLibrary)DataContext).SpLibraryId);*/
                 var spList = Context.Web.Lists.GetById(new Guid(spLib.Text));
                 Context.Load(spList);
                 CamlQuery query = CamlQuery.CreateAllItemsQuery();
@@ -75,7 +74,7 @@ namespace KizeoAndSharepoint_wizard
 
         private bool PreventInvalidCharacters()
         {
-            if (txtInitialTypePath.Text.Contains("/") || txtInitialTypePath.Text.Contains("\\") || txtInitialTypePath.Text.Equals(""))
+            if (txtInitialTypePath.Text.StartsWith("/") || txtInitialTypePath.Text.Contains("\\") || txtInitialTypePath.Text.Equals(""))
             {
                 txtInitialTypePath.BorderBrush = Brushes.Red;
                 MessageBox.Show("Incorrect path for inital type path. Illegal characters: /, \\, empty values");
