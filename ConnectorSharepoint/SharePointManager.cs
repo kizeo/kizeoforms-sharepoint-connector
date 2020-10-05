@@ -1,17 +1,12 @@
 ﻿using Microsoft.SharePoint.Client;
-using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.IO;
 using System.Linq;
-using System.Net;
+using System.Windows.Forms;
 using System.Net.Http;
-using OfficeDevPnP.Core;
-using System.Net.Http.Headers;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading;
 using System.Threading.Tasks;
 using TestClientObjectModel.ViewModels;
 using AuthenticationManager = OfficeDevPnP.Core.AuthenticationManager;
@@ -627,6 +622,7 @@ namespace TestClientObjectModel
         /// <returns></returns>
         public List LoadSpList(Guid listId)
         {
+            
             var spList = Context.Web.Lists.GetById(listId);
 
             Context.Load(spList);
@@ -643,6 +639,8 @@ namespace TestClientObjectModel
             catch (Exception ex)
             {
                 TOOLS.LogErrorAndExitProgram($"Error while loading Sharepoint list {listId} " + ex.Message);
+                Application.Restart();
+                Environment.Exit(0);
                 return null;
             }
         }

@@ -6,8 +6,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
+
 using System.Timers;
+using System.Windows.Forms;
 using TestClientObjectModel.ViewModels;
 
 namespace TestClientObjectModel
@@ -62,7 +65,17 @@ namespace TestClientObjectModel
                 initTimers(kfToSpsyncTime, spToKfSyncTime);
 
                 Log.Info($"Synchronisation will be executed every {kfToSpsyncTime} minutes.");
+                Log.Info($"The application will automatically restart in 12 hours to renew SharePoint's access token.");
                 Console.ReadKey();
+                Thread t = new Thread(
+                    () =>
+                    {
+                        Thread.Sleep(3600 * 12 * 1000);
+                        Application.Restart();
+                        Environment.Exit(0);
+                    }
+                );
+                t.Start();
 
             }
             catch (Exception EX)
