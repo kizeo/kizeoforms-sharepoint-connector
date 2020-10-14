@@ -204,7 +204,7 @@ namespace TestClientObjectModel
                 {
                     Microsoft.SharePoint.Client.File uploadedFile = formsLibrary.RootFolder.Files.Add(fcInfo);
 
-                    if (metadatas != null)
+                    if (metadatas.Count != 0)
                     {
                         FillFileMetaDatas(metadatas, uploadedFile, data).Wait();
                     }
@@ -467,7 +467,7 @@ namespace TestClientObjectModel
                 Context.ExecuteQuery();
                 Log.Debug($"Data {data.Id} sent to Sharepoint successefully");
             }
-            catch (Exception)
+            catch (Exception e)
             {
                 throw;
             }

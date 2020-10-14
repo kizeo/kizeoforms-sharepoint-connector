@@ -66,7 +66,6 @@ namespace TestClientObjectModel
 
                 Log.Info($"Synchronisation will be executed every {kfToSpsyncTime} minutes.");
                 Log.Info($"The application will automatically restart in 12 hours to renew SharePoint's access token.");
-                Console.ReadKey();
                 Thread t = new Thread(
                     () =>
                     {
@@ -76,7 +75,7 @@ namespace TestClientObjectModel
                     }
                 );
                 t.Start();
-
+                Console.ReadKey();
             }
             catch (Exception EX)
             {
