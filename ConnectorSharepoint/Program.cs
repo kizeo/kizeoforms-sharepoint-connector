@@ -46,7 +46,16 @@ namespace TestClientObjectModel
                 Log.Debug($"Get and serialize config file from : {ConfFile}.");
                 Config = GetConfig(ConfFile);
                 Log.Debug($"Configuration succeeded");
-
+                Log.Info($"The application will automatically restart in 12 hours to renew SharePoint's access token.");
+                Thread t = new Thread(
+                    () =>
+                    {
+                        Thread.Sleep(3600 * 12 * 1000);
+                        Application.Restart();
+                        Environment.Exit(0);
+                    }
+                );
+                t.Start();
                 if (Config == null || Config.KizeoConfig == null || Config.SharepointConfig == null)
                 {
                     TOOLS.LogErrorAndExitProgram("The config file is empty or some data is missing.");
@@ -58,6 +67,7 @@ namespace TestClientObjectModel
                 SpManager = new SharePointManager(Config.SharepointConfig.SPDomain, Config.SharepointConfig.SPClientId, Config.SharepointConfig.SPClientSecret, KfApiManager);
                 Context = SpManager.Context;
 
+              
                 FillKfExtListsFromSp().Wait();
                 FillSpListsFromKfData().Wait();
                 UploadExportsToSpLibraries().Wait();
@@ -65,20 +75,11 @@ namespace TestClientObjectModel
                 initTimers(kfToSpsyncTime, spToKfSyncTime);
 
                 Log.Info($"Synchronisation will be executed every {kfToSpsyncTime} minutes.");
-                Log.Info($"The application will automatically restart in 12 hours to renew SharePoint's access token.");
-                Thread t = new Thread(
-                    () =>
-                    {
-                        Thread.Sleep(3600 * 12 * 1000);
-                        Application.Restart();
-                        Environment.Exit(0);
-                    }
-                );
-                t.Start();
+               
                 Console.ReadKey();
             }
             catch (Exception EX)
-            {
+            { 
                 Log.Fatal(EX);
             }
             finally
